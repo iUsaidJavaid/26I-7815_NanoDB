@@ -1,30 +1,32 @@
 #ifndef NANODB_PAGE_H
 #define NANODB_PAGE_H
 
+#include <cstdio>
+#include "common/Types.h"
+#include "common/Logger.h"
+
 namespace NanoDB {
 
-class Page {
-public:
+struct Page {
     static const int PAGE_SIZE = 4096;
     
-    Page();
-    ~Page();
+    int pageId;
+    bool isDirty;
+    bool isPinned;
+    char data[PAGE_SIZE];
+    int usedBytes;
     
-    char* getData();
-    const char* getData() const;
+    Page() : pageId(0), isDirty(false), isPinned(false), usedBytes(0) {
+        for (int i = 0; i < PAGE_SIZE; ++i) {
+            data[i] = 0;
+        }
+    }
     
-    int getPageNumber() const;
-    void setPageNumber(int pageNum);
-    
-    bool isDirty() const;
-    void setDirty(bool dirty);
-    
+    void writeRow(const Row& row, int& offset);
+    bool readRow(Row& out, int& offset, const ColumnSchema* schema, int colCount);
     void clear();
-    
-private:
-    char data_[PAGE_SIZE];
-    int page_number_;
-    bool dirty_;
+    void serialize(FILE* f) const;
+    void deserialize(FILE* f);
 };
 
 } // namespace NanoDB

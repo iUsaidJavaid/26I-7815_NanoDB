@@ -1,27 +1,36 @@
 #ifndef NANODB_PAGER_H
 #define NANODB_PAGER_H
 
+#include <cstdio>
 #include "storage/Page.h"
+#include "storage/LRUCache.h"
 
 namespace NanoDB {
 
 class Pager {
 public:
-    Pager(const char* filename);
+    static const int MAX_PAGES = 1024;
+    
+    Pager(const char* filePath, int poolSize);
     ~Pager();
     
-    bool open();
+    Page* fetchPage(int pageId);
+    void writePage(int pageId);
+    Page* allocateNewPage();
+    void flushAll();
+    int getTotalPages() const;
     void close();
     
-    Page* getPage(int page_num);
-    void flushPage(int page_num);
-    
-    int getNumPages() const;
-    
 private:
-    char* filename_;
-    int file_descriptor_;
-    int num_pages_;
+    char filePath_[256];
+    FILE* file_;
+    int poolSize_;
+    int totalPages_;
+    Page* pagePool_;
+    LRUCache* lruCache_;
+    
+    void readSuperblock();
+    void writeSuperblock();
 };
 
 } // namespace NanoDB
