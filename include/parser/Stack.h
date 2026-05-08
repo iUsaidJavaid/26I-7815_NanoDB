@@ -47,6 +47,7 @@ public:
     }
     
     ~Stack() {
+        clearAndDeleteObjects();
         delete[] data_;
     }
     
@@ -93,6 +94,15 @@ public:
     }
     
     void clear() {
+        top_ = -1;
+    }
+    
+    // Clear stack and delete objects if T is a pointer type
+    // This is a no-op for non-pointer types
+    void clearAndDeleteObjects() {
+        for (int i = 0; i <= top_; ++i) {
+            delete data_[i];
+        }
         top_ = -1;
     }
     

@@ -12,6 +12,18 @@ SystemCatalog::SystemCatalog() {
 
 SystemCatalog::~SystemCatalog() {
     if (tableMap_ != nullptr) {
+        // Manually delete char* keys and TableSchema* values before deleting HashMap
+        for (int i = 0; i < 256; ++i) {
+            HashNode<char*, TableSchema*>* node = tableMap_->buckets_[i];
+            while (node != nullptr) {
+                HashNode<char*, TableSchema*>* next = node->next;
+                delete[] node->key;      // Delete the char* key
+                delete node->value;      // Delete TableSchema*
+                delete node;
+                node = next;
+            }
+        }
+        delete[] tableMap_->buckets_;   // Delete bucket array
         delete tableMap_;
     }
 }

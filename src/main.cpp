@@ -4,6 +4,7 @@
 #include <csignal>
 #include "common/Types.h"
 #include "common/Logger.h"
+#include "common/MemTracker.h"
 #include "storage/Page.h"
 #include "storage/Pager.h"
 #include "storage/LRUCache.h"
@@ -239,6 +240,9 @@ int main(int argc, char* argv[]) {
     
     SystemCatalog::destroy();
     Logger::destroy();
+    
+    // Report memory usage in debug mode
+    MemTracker::report();
     
     printf("[EXIT] NanoDB shutdown complete.\n");
     
