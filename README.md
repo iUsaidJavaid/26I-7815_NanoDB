@@ -80,13 +80,3 @@ make
 ```bash
 ./test_runner
 ```
-
-## Design Constraints
-
-- No STL containers (std::vector, std::map, etc.) used
-- Custom implementations for all data structures
-- C++17 standard
-- Page-based storage with 4KB pages
-- LRU cache for buffer management
-- AVL tree for indexing
-- Hash map for catalog management
