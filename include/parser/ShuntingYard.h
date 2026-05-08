@@ -2,32 +2,23 @@
 #define NANODB_SHUNTING_YARD_H
 
 #include "parser/Tokenizer.h"
+#include "parser/Stack.h"
+#include "parser/Queue.h"
+#include "common/Logger.h"
 
 namespace NanoDB {
 
 class ShuntingYard {
 public:
-    struct StackNode {
-        Token token;
-        StackNode* next;
-    };
-    
     ShuntingYard();
     ~ShuntingYard();
     
-    Token* parse(Token* tokens, int num_tokens);
+    Token* convert(Token* infixTokens, int tokenCount, int& outCount);
+    void printPostfix(Token* postfix, int count) const;
     
 private:
-    StackNode* operator_stack_;
-    Token* output_queue_;
-    int output_size_;
-    int output_capacity_;
-    
-    int getPrecedence(const Token& token);
-    bool isLeftAssociative(const Token& token);
-    void pushOperator(const Token& token);
-    Token popOperator();
-    void pushOutput(const Token& token);
+    bool isOperator(TokenType type) const;
+    bool isOperand(TokenType type) const;
 };
 
 } // namespace NanoDB
