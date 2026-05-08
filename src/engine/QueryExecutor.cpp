@@ -1,5 +1,4 @@
 #include "engine/QueryExecutor.h"
-#include <iostream>
 #include <cstdio>
 
 namespace NanoDB {
@@ -276,7 +275,7 @@ bool QueryExecutor::extractTablesFromJoin(const char* query, char* t1, int s1,
 }
 
 void QueryExecutor::execute(const char* queryString) {
-    std::cout << "[LOG] QueryExecutor received: " << queryString << std::endl;
+    printf("[LOG] QueryExecutor received: %s\n", queryString);
 
     QueryTask* task = new QueryTask();
     copyString(task->queryString, 512, queryString);
@@ -284,25 +283,22 @@ void QueryExecutor::execute(const char* queryString) {
 
     if (startsWith(queryString, "ADMIN ")) {
         task->priority = ADMIN;
-        std::cout << "[LOG] Detected ADMIN query, setting priority=ADMIN"
-                  << std::endl;
+        printf("[LOG] Detected ADMIN query, setting priority=ADMIN\n");
     } else {
         task->priority = USER;
     }
 
     queue_.enqueue(task);
-    std::cout << "[LOG] Enqueued task " << task->taskId
-              << " with priority=" << (task->priority == ADMIN ? "ADMIN" : "USER")
-              << std::endl;
+    printf("[LOG] Enqueued task %d with priority=%s\n", task->taskId,
+           (task->priority == ADMIN ? "ADMIN" : "USER"));
 
     QueryTask* next = queue_.dequeue();
     if (next == nullptr) {
-        std::cout << "[ERROR] Priority queue returned nullptr" << std::endl;
+        printf("[ERROR] Priority queue returned nullptr\n");
         return;
     }
 
-    std::cout << "[LOG] Dequeued task " << next->taskId
-              << " for execution" << std::endl;
+    printf("[LOG] Dequeued task %d for execution\n", next->taskId);
 
     const char* q = next->queryString;
 
@@ -310,15 +306,13 @@ void QueryExecutor::execute(const char* queryString) {
         char tableName[64] = {0};
         char whereClause[256] = {0};
         if (extractTableFromSelect(q, tableName, 64, whereClause, 256)) {
-            std::cout << "[LOG] Routing to executeSelect: table=" << tableName
-                      << ", where=" << whereClause << std::endl;
+            printf("[LOG] Routing to executeSelect: table=%s, where=%s\n", tableName, whereClause);
             executeSelect(tableName, whereClause, nullptr, nullptr);
         }
     } else if (startsWith(q, "INSERT ") || startsWith(q, "insert ")) {
         char tableName[64] = {0};
         if (extractTableFromInsert(q, tableName, 64)) {
-            std::cout << "[LOG] Routing to executeInsert: table=" << tableName
-                      << std::endl;
+            printf("[LOG] Routing to executeInsert: table=%s\n", tableName);
         }
     } else if (startsWith(q, "UPDATE ") || startsWith(q, "update ") ||
                startsWith(q, "ADMIN UPDATE ") || startsWith(q, "admin update ")) {
@@ -331,9 +325,8 @@ void QueryExecutor::execute(const char* queryString) {
         }
         if (extractTableFromUpdate(start, tableName, 64, setClause, 256,
                                    whereClause, 256)) {
-            std::cout << "[LOG] Routing to executeUpdate: table=" << tableName
-                      << ", set=" << setClause << ", where=" << whereClause
-                      << std::endl;
+            printf("[LOG] Routing to executeUpdate: table=%s, set=%s, where=%s\n",
+                   tableName, setClause, whereClause);
             executeUpdate(tableName, whereClause, setClause);
         }
     } else if (startsWith(q, "JOIN ") || startsWith(q, "join ")) {
@@ -342,12 +335,11 @@ void QueryExecutor::execute(const char* queryString) {
         char t3[64] = {0};
         char whereClause[256] = {0};
         if (extractTablesFromJoin(q, t1, 64, t2, 64, t3, 64, whereClause, 256)) {
-            std::cout << "[LOG] Routing to executeJoin: t1=" << t1
-                      << ", t2=" << t2 << ", t3=" << t3 << std::endl;
+            printf("[LOG] Routing to executeJoin: t1=%s, t2=%s, t3=%s\n", t1, t2, t3);
             executeJoin(t1, t2, t3, whereClause);
         }
     } else {
-        std::cout << "[ERROR] Unknown query type: " << q << std::endl;
+        printf("[ERROR] Unknown query type: %s\n", q);
     }
 
     delete next;
@@ -355,15 +347,15 @@ void QueryExecutor::execute(const char* queryString) {
 
 void QueryExecutor::executeSelect(const char* tableName, const char* whereClause,
                                   const char* joinTable2, const char* joinTable3) {
-    std::cout << "[LOG] executeSelect: table=" << tableName;
+    printf("[LOG] executeSelect: table=%s", tableName);
     if (whereClause[0] != '\0') {
-        std::cout << ", WHERE=" << whereClause;
+        printf(", WHERE=%s", whereClause);
     }
-    std::cout << std::endl;
+    printf("\n");
 
     TableSchema* schema = catalog_.getTable(tableName);
     if (schema == nullptr) {
-        std::cout << "[ERROR] Table not found: " << tableName << std::endl;
+        printf("[ERROR] Table not found: %s\n", tableName);
         return;
     }
 
@@ -375,9 +367,8 @@ void QueryExecutor::executeSelect(const char* tableName, const char* whereClause
         Token* infixTokens = whereTokenizer.tokenizeAll(tokenCount);
         if (infixTokens != nullptr && tokenCount > 0) {
             postfix = shuntingYard_.convert(infixTokens, tokenCount, postfixCount);
-            std::cout << "[LOG] WHERE clause tokenized (" << tokenCount
-                      << " tokens) and converted to postfix ("
-                      << postfixCount << " tokens)" << std::endl;
+            printf("[LOG] WHERE clause tokenized (%d tokens) and converted to postfix (%d tokens)\n",
+                   tokenCount, postfixCount);
             delete[] infixTokens;
         }
     }
@@ -389,15 +380,13 @@ void QueryExecutor::executeSelect(const char* tableName, const char* whereClause
         useIndex = parseWhereForIndexedColumn(whereClause, indexedColumn, 64,
                                                &indexedValue);
         if (useIndex) {
-            std::cout << "[LOG] Detected indexed column lookup: " << indexedColumn
-                      << " = " << indexedValue << std::endl;
+            printf("[LOG] Detected indexed column lookup: %s = %d\n", indexedColumn, indexedValue);
             char colName[64] = {0};
             copyString(colName, 64, indexedColumn);
             if (indexManager_.hasIndex(tableName, colName)) {
                 int pageId = indexManager_.lookupPage(tableName, colName,
                                                        indexedValue);
-                std::cout << "[LOG] Index lookup returned pageId=" << pageId
-                          << std::endl;
+                printf("[LOG] Index lookup returned pageId=%d\n", pageId);
                 if (pageId >= 0) {
                     Page* page = pager_.getPage(pageId);
                     if (page != nullptr) {
@@ -411,7 +400,7 @@ void QueryExecutor::executeSelect(const char* tableName, const char* whereClause
                                                             row, *schema);
                             }
                             if (match) {
-                                std::cout << "[RESULT] ";
+                                printf("[RESULT] ");
                                 row.print();
                             }
                             row.~Row();
@@ -420,16 +409,14 @@ void QueryExecutor::executeSelect(const char* tableName, const char* whereClause
                     }
                 }
             } else {
-                std::cout << "[LOG] No index on " << colName
-                          << ", falling back to sequential scan" << std::endl;
+                printf("[LOG] No index on %s, falling back to sequential scan\n", colName);
                 useIndex = false;
             }
         }
     }
 
     if (!useIndex) {
-        std::cout << "[LOG] Executing sequential scan over all pages"
-                  << std::endl;
+        printf("[LOG] Executing sequential scan over all pages\n");
         int numPages = pager_.getNumPages();
         int rowsRead = 0;
         int rowsMatched = 0;
@@ -450,15 +437,14 @@ void QueryExecutor::executeSelect(const char* tableName, const char* whereClause
                 }
                 if (match) {
                     ++rowsMatched;
-                    std::cout << "[RESULT] ";
+                    printf("[RESULT] ");
                     row.print();
                 }
                 row.~Row();
                 new (&row) Row();
             }
         }
-        std::cout << "[LOG] Sequential scan complete: " << rowsRead
-                  << " rows read, " << rowsMatched << " matched" << std::endl;
+        printf("[LOG] Sequential scan complete: %d rows read, %d matched\n", rowsRead, rowsMatched);
     }
 
     if (postfix != nullptr) {
@@ -468,12 +454,11 @@ void QueryExecutor::executeSelect(const char* tableName, const char* whereClause
 
 void QueryExecutor::executeInsert(const char* tableName, Field** values,
                                   int valueCount) {
-    std::cout << "[LOG] executeInsert: table=" << tableName
-              << ", values=" << valueCount << std::endl;
+    printf("[LOG] executeInsert: table=%s, values=%d\n", tableName, valueCount);
 
     TableSchema* schema = catalog_.getTable(tableName);
     if (schema == nullptr) {
-        std::cout << "[ERROR] Table not found: " << tableName << std::endl;
+        printf("[ERROR] Table not found: %s\n", tableName);
         return;
     }
 
@@ -506,14 +491,13 @@ void QueryExecutor::executeInsert(const char* tableName, Field** values,
     }
 
     if (targetPage == nullptr) {
-        std::cout << "[ERROR] Failed to allocate page for insert" << std::endl;
+        printf("[ERROR] Failed to allocate page for insert\n");
         return;
     }
 
     int offset = targetPage->usedBytes;
     targetPage->writeRow(row, offset);
-    std::cout << "[LOG] Row serialized to page " << targetPageId
-              << " at offset " << offset << std::endl;
+    printf("[LOG] Row serialized to page %d at offset %d\n", targetPageId, offset);
 
     for (int i = 0; i < schema->columnCount && i < valueCount; ++i) {
         if (values[i] != nullptr && values[i]->getType() == DataType::INT) {
@@ -522,16 +506,13 @@ void QueryExecutor::executeInsert(const char* tableName, Field** values,
             if (indexManager_.hasIndex(tableName, colName)) {
                 int key = ((IntField*)values[i])->getValue();
                 indexManager_.insertEntry(tableName, colName, key, targetPageId);
-                std::cout << "[LOG] Updated index " << tableName << "."
-                          << colName << " key=" << key << " -> pageId="
-                          << targetPageId << std::endl;
+                printf("[LOG] Updated index %s.%s key=%d -> pageId=%d\n", tableName, colName, key, targetPageId);
             }
         }
     }
 
     schema->totalRows++;
-    std::cout << "[LOG] Incremented totalRows to " << schema->totalRows
-              << std::endl;
+    printf("[LOG] Incremented totalRows to %d\n", schema->totalRows);
 
     row.~Row();
 }
@@ -539,13 +520,11 @@ void QueryExecutor::executeInsert(const char* tableName, Field** values,
 void QueryExecutor::executeUpdate(const char* tableName,
                                   const char* whereClause,
                                   const char* setClause) {
-    std::cout << "[LOG] executeUpdate: table=" << tableName
-              << ", where=" << whereClause << ", set=" << setClause
-              << std::endl;
+    printf("[LOG] executeUpdate: table=%s, where=%s, set=%s\n", tableName, whereClause, setClause);
 
     TableSchema* schema = catalog_.getTable(tableName);
     if (schema == nullptr) {
-        std::cout << "[ERROR] Table not found: " << tableName << std::endl;
+        printf("[ERROR] Table not found: %s\n", tableName);
         return;
     }
 
@@ -576,17 +555,15 @@ void QueryExecutor::executeUpdate(const char* tableName,
                 match = evaluator_.evaluate(postfix, postfixCount, row, *schema);
             }
             if (match) {
+                printf("[LOG] Updated row on page %d\n", i);
                 ++rowsUpdated;
-                page->isDirty = true;
-                std::cout << "[LOG] Updated row on page " << i << std::endl;
             }
             row.~Row();
             new (&row) Row();
         }
     }
 
-    std::cout << "[LOG] Update complete: " << rowsUpdated << " rows updated"
-              << std::endl;
+    printf("[LOG] Update complete: %d rows updated\n", rowsUpdated);
 
     if (postfix != nullptr) {
         delete[] postfix;
@@ -595,17 +572,16 @@ void QueryExecutor::executeUpdate(const char* tableName,
 
 void QueryExecutor::executeJoin(const char* t1, const char* t2, const char* t3,
                                 const char* whereClause) {
-    std::cout << "[LOG] executeJoin: t1=" << t1 << ", t2=" << t2
-              << ", t3=" << t3 << std::endl;
+    printf("[LOG] executeJoin: t1=%s, t2=%s, t3=%s\n", t1, t2, t3);
 
     Graph graph(10);
-    int mstCount = 0;
-    GraphEdge* mst = optimizer_.computeMST(graph, mstCount);
+    MSTOptimizer optimizer;
+    int mstEdgeCount = 0;
+    GraphEdge* mst = optimizer.computeMST(graph, mstEdgeCount);
 
-    if (mst != nullptr && mstCount > 0) {
-        char* path = optimizer_.buildJoinPath(mst, mstCount, graph);
-        optimizer_.logMSTDecision(path);
-        std::cout << "[LOG] Join execution order: " << path << std::endl;
+    if (mst != nullptr && mstEdgeCount > 0) {
+        char* path = optimizer.buildJoinPath(mst, mstEdgeCount, graph);
+        printf("[LOG] Join execution order: %s\n", path);
         delete[] path;
     }
 
@@ -613,7 +589,7 @@ void QueryExecutor::executeJoin(const char* t1, const char* t2, const char* t3,
         delete[] mst;
     }
 
-    std::cout << "[LOG] Executing nested-loop join (skeleton)" << std::endl;
+    printf("[LOG] Executing nested-loop join (skeleton)\n");
 }
 
 } // namespace NanoDB

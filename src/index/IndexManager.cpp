@@ -1,5 +1,5 @@
 #include "index/IndexManager.h"
-#include <iostream>
+#include <cstdio>
 #include <ctime>
 
 namespace NanoDB {
@@ -125,7 +125,7 @@ int IndexManager::lookupPage(const char* tableName, const char* columnName, int 
     int result = tree->search(key);
     clock_t end = clock();
     double timeMs = ((double)(end - start)) / CLOCKS_PER_SEC * 1000.0;
-    std::cout << "[BENCHMARK] AVL index found key " << key << " in " << timeMs << "ms" << std::endl;
+    printf("[BENCHMARK] AVL index found key %d in %.2fms\n", key, timeMs);
     return result;
 }
 
@@ -189,8 +189,7 @@ int SequentialScanner::scan(const char* tableName, int targetKey, Pager& pager) 
                 if (value == targetKey) {
                     clock_t end = clock();
                     double timeMs = ((double)(end - start)) / CLOCKS_PER_SEC * 1000.0;
-                    std::cout << "[BENCHMARK] Sequential scan found key " << targetKey
-                              << " in " << timeMs << "ms after " << pagesScanned << " page reads" << std::endl;
+                    printf("[BENCHMARK] Sequential scan found key %d in %.2fms after %d page reads\n", targetKey, timeMs, pagesScanned);
                     return i;
                 }
             }
@@ -199,8 +198,7 @@ int SequentialScanner::scan(const char* tableName, int targetKey, Pager& pager) 
 
     clock_t end = clock();
     double timeMs = ((double)(end - start)) / CLOCKS_PER_SEC * 1000.0;
-    std::cout << "[BENCHMARK] Sequential scan did not find key " << targetKey
-              << " in " << timeMs << "ms after " << pagesScanned << " page reads" << std::endl;
+    printf("[BENCHMARK] Sequential scan did not find key %d in %.2fms after %d page reads\n", targetKey, timeMs, pagesScanned);
     return -1;
 }
 

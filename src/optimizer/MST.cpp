@@ -1,5 +1,5 @@
 #include "optimizer/MST.h"
-#include <iostream>
+#include <cstdio>
 
 namespace NanoDB {
 
@@ -189,7 +189,7 @@ char* MSTOptimizer::buildJoinPath(GraphEdge* mstEdges, int edgeCount, Graph& gra
 }
 
 void MSTOptimizer::logMSTDecision(const char* path) {
-    std::cout << "[LOG] Multi-table join routed via MST: " << path << std::endl;
+    printf("[LOG] Multi-table join routed via MST: %s\n", path);
 }
 
 float MSTOptimizer::computeTotalCost(GraphEdge* mstEdges, int edgeCount) const {

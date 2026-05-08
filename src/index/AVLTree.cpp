@@ -1,5 +1,5 @@
 #include "index/AVLTree.h"
-#include <iostream>
+#include <cstdio>
 
 namespace NanoDB {
 
@@ -226,13 +226,13 @@ void AVLTree::inOrderPrint(AVLNode* node) const {
         return;
     }
     inOrderPrint(node->left);
-    std::cout << "(" << node->key << "," << node->pageId << ") ";
+    printf("(%d,%d) ", node->key, node->pageId);
     inOrderPrint(node->right);
 }
 
 void AVLTree::printInOrder() const {
     inOrderPrint(root_);
-    std::cout << std::endl;
+    printf("\n");
 }
 
 void AVLTree::destroy(AVLNode* node) {
