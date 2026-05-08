@@ -1,57 +1,50 @@
-INSERT INTO customer VALUES (1, "Alice", 7500.00, "BUILDING", 3)
-INSERT INTO customer VALUES (2, "Bob", 5000.00, "AUTOMOBILE", 1)
-INSERT INTO customer VALUES (3, "Charlie", 12000.00, "BUILDING", 3)
-INSERT INTO customer VALUES (4, "Diana", 3000.00, "MACHINERY", 2)
-INSERT INTO customer VALUES (5, "Eve", 9000.00, "BUILDING", 3)
-INSERT INTO orders VALUES (101, 1, 200.50, "2024-01-15")
-INSERT INTO orders VALUES (102, 1, 150.00, "2024-02-20")
-INSERT INTO orders VALUES (103, 2, 500.00, "2024-03-10")
-INSERT INTO orders VALUES (104, 3, 1200.75, "2024-04-05")
-INSERT INTO orders VALUES (105, 4, 50.00, "2024-05-01")
-INSERT INTO lineitem VALUES (1001, 101, 2, 45.25)
-INSERT INTO lineitem VALUES (1002, 101, 1, 110.00)
-INSERT INTO lineitem VALUES (1003, 102, 5, 30.00)
-INSERT INTO lineitem VALUES (1004, 103, 3, 166.67)
-INSERT INTO lineitem VALUES (1005, 104, 10, 120.08)
-SELECT * FROM customer WHERE c_custkey = 1
-SELECT * FROM customer WHERE c_acctbal > 5000
-SELECT * FROM customer WHERE c_mktsegment = "BUILDING"
-SELECT * FROM customer WHERE c_nationkey = 3 AND c_acctbal > 6000
-SELECT * FROM customer WHERE c_acctbal > 4000 AND c_mktsegment = "BUILDING"
-SELECT * FROM orders WHERE o_orderkey = 101
-SELECT * FROM orders WHERE o_custkey = 1
-SELECT * FROM orders WHERE o_totalprice > 100
-SELECT * FROM orders WHERE o_orderdate = "2024-01-15"
-SELECT * FROM lineitem WHERE l_orderkey = 101
-SELECT * FROM lineitem WHERE l_quantity > 2
-SELECT * FROM lineitem WHERE l_extendedprice > 100
-JOIN customer, orders, lineitem WHERE c_custkey = o_custkey
-JOIN customer, orders, lineitem WHERE c_acctbal > 5000
-JOIN orders, lineitem, customer WHERE o_orderkey = l_orderkey
-UPDATE customer SET c_acctbal = 9999 WHERE c_custkey = 1
-UPDATE customer SET c_mktsegment = "VIP" WHERE c_acctkey = 3
-UPDATE orders SET o_totalprice = 999.99 WHERE o_orderkey = 101
-UPDATE lineitem SET l_quantity = 99 WHERE l_linenumber = 1001
-INSERT INTO customer VALUES (6, "Frank", 6000.00, "HOUSEHOLD", 5)
-INSERT INTO customer VALUES (7, "Grace", 8500.00, "BUILDING", 3)
-INSERT INTO customer VALUES (8, "Hank", 4500.00, "AUTOMOBILE", 1)
-INSERT INTO customer VALUES (9, "Ivy", 11000.00, "FURNITURE", 4)
-INSERT INTO customer VALUES (10, "Jack", 2500.00, "MACHINERY", 2)
-INSERT INTO orders VALUES (106, 5, 800.00, "2024-06-15")
-INSERT INTO orders VALUES (107, 6, 300.00, "2024-07-20")
-INSERT INTO orders VALUES (108, 7, 950.00, "2024-08-01")
-INSERT INTO orders VALUES (109, 8, 75.50, "2024-09-10")
-INSERT INTO orders VALUES (110, 9, 2200.00, "2024-10-05")
-INSERT INTO lineitem VALUES (1006, 105, 4, 12.50)
-INSERT INTO lineitem VALUES (1007, 106, 2, 400.00)
-INSERT INTO lineitem VALUES (1008, 107, 6, 50.00)
-INSERT INTO lineitem VALUES (1009, 108, 1, 950.00)
-INSERT INTO lineitem VALUES (1010, 109, 8, 9.44)
-SELECT * FROM customer WHERE c_acctbal > 7000 OR c_nationkey = 1
-SELECT * FROM customer WHERE c_custkey > 5 AND c_acctbal < 8000
-SELECT * FROM orders WHERE o_totalprice > 200 AND o_totalprice < 1000
-SELECT * FROM lineitem WHERE l_quantity > 3 AND l_extendedprice > 100
-SELECT * FROM customer WHERE c_name = "Alice"
-JOIN customer, orders, lineitem WHERE c_custkey = o_custkey AND o_orderkey = l_orderkey
-UPDATE customer SET c_acctbal = c_acctbal * 1.1 WHERE c_mktsegment = "BUILDING"
-UPDATE orders SET o_totalprice = o_totalprice + 50 WHERE o_orderkey > 105
+SELECT FROM customer WHERE ( c_acctbal > 5000 AND c_mktsegment == "BUILDING" ) OR c_nationkey == 15
+SELECT SEQUENTIAL FROM customer WHERE c_custkey == 42
+SELECT INDEXED FROM customer WHERE c_custkey == 42
+SELECT FROM customer JOIN orders JOIN lineitem
+SELECT STRESS FROM lineitem LIMIT 5000
+SELECT FROM customer WHERE c_custkey == 1
+SELECT FROM customer WHERE c_custkey == 2
+SELECT FROM customer WHERE c_custkey == 3
+SELECT FROM customer WHERE c_custkey == 4
+SELECT FROM customer WHERE c_custkey == 5
+SELECT FROM customer WHERE c_custkey == 6
+SELECT FROM customer WHERE c_custkey == 7
+SELECT FROM customer WHERE c_custkey == 8
+SELECT FROM customer WHERE c_custkey == 9
+SELECT FROM customer WHERE c_custkey == 10
+SELECT FROM customer WHERE c_custkey == 11
+SELECT FROM customer WHERE c_custkey == 12
+SELECT FROM customer WHERE c_custkey == 13
+SELECT FROM customer WHERE c_custkey == 14
+SELECT FROM customer WHERE c_custkey == 15
+SELECT FROM customer WHERE c_custkey == 16
+SELECT FROM customer WHERE c_custkey == 17
+SELECT FROM customer WHERE c_custkey == 18
+SELECT FROM customer WHERE c_custkey == 19
+SELECT FROM customer WHERE c_custkey == 20
+SELECT FROM customer WHERE c_custkey == 21
+SELECT FROM customer WHERE c_custkey == 22
+SELECT FROM customer WHERE c_custkey == 23
+SELECT FROM customer WHERE c_custkey == 24
+SELECT FROM customer WHERE c_custkey == 25
+SELECT FROM customer WHERE c_custkey == 26
+SELECT FROM customer WHERE c_custkey == 27
+SELECT FROM customer WHERE c_custkey == 28
+SELECT FROM customer WHERE c_custkey == 29
+SELECT FROM customer WHERE c_custkey == 30
+SELECT FROM customer WHERE c_custkey == 31
+SELECT FROM customer WHERE c_custkey == 32
+SELECT FROM customer WHERE c_custkey == 33
+SELECT FROM customer WHERE c_custkey == 34
+SELECT FROM customer WHERE c_custkey == 35
+SELECT FROM customer WHERE c_custkey == 36
+ADMIN UPDATE customer SET c_acctbal = 9999.99 WHERE c_custkey == 1
+SELECT FROM orders WHERE ( (o_totalprice * 1.5) > 100000 AND (o_custkey % 2 == 0) ) OR o_orderstatus != "O"
+INSERT INTO customer VALUES (99991, "Test Alpha", 1234.56, "BUILDING", 5)
+INSERT INTO customer VALUES (99992, "Test Beta", 2345.67, "AUTOMOBILE", 3)
+INSERT INTO customer VALUES (99993, "Test Gamma", 3456.78, "MACHINERY", 7)
+INSERT INTO customer VALUES (99994, "Test Delta", 4567.89, "HOUSEHOLD", 12)
+INSERT INTO customer VALUES (99995, "Test Epsilon", 5678.90, "FURNITURE", 19)
+SHUTDOWN
+SELECT FROM customer WHERE c_custkey == 99991
