@@ -7,35 +7,43 @@ class AVLTree {
 public:
     struct AVLNode {
         int key;
-        int value;
+        int pageId;
         AVLNode* left;
         AVLNode* right;
         int height;
     };
-    
+
     AVLTree();
     ~AVLTree();
-    
-    bool insert(int key, int value);
-    bool remove(int key);
-    bool search(int key, int* value);
-    
-    void clear();
-    int size() const;
-    
+
+    void insert(int key, int pageId);
+    int search(int key);
+    void remove(int key);
+    int* rangeSearch(int low, int high, int& count);
+    int getHeight() const;
+    int getNodeCount() const;
+    void printInOrder() const;
+
+    int getBalanceFactor(AVLNode* node);
+    AVLNode* rotateLeft(AVLNode* node);
+    AVLNode* rotateRight(AVLNode* node);
+    AVLNode* rotateLeftRight(AVLNode* node);
+    AVLNode* rotateRightLeft(AVLNode* node);
+    AVLNode* rebalance(AVLNode* node);
+
 private:
     AVLNode* root_;
-    int size_;
-    
-    int height(AVLNode* node);
-    int balanceFactor(AVLNode* node);
-    AVLNode* rotateRight(AVLNode* y);
-    AVLNode* rotateLeft(AVLNode* x);
-    AVLNode* insertNode(AVLNode* node, int key, int value);
+    int nodeCount_;
+
+    int height(AVLNode* node) const;
+    int max(int a, int b) const;
+    AVLNode* createNode(int key, int pageId);
+    AVLNode* insertNode(AVLNode* node, int key, int pageId);
     AVLNode* removeNode(AVLNode* node, int key);
-    AVLNode* findMin(AVLNode* node);
-    AVLNode* balance(AVLNode* node);
+    AVLNode* findMin(AVLNode* node) const;
     void destroy(AVLNode* node);
+    void inOrderPrint(AVLNode* node) const;
+    void rangeCollect(AVLNode* node, int low, int high, int* result, int& index) const;
 };
 
 } // namespace NanoDB
