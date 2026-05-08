@@ -3,40 +3,39 @@
 
 namespace NanoDB {
 
+struct GraphEdge {
+    int src;
+    int dst;
+    float weight;
+    char joinCondition[128];
+};
+
 class Graph {
 public:
-    struct Edge {
-        int from;
-        int to;
-        int weight;
-        Edge* next;
-    };
-    
-    struct Vertex {
-        int id;
-        Edge* edges;
-        Vertex* next;
-    };
-    
-    Graph(int max_vertices);
+    Graph(int maxNodes);
     ~Graph();
-    
-    bool addVertex(int id);
-    bool addEdge(int from, int to, int weight);
-    bool removeEdge(int from, int to);
-    bool hasEdge(int from, int to);
-    
-    int getDegree(int vertex);
-    Edge* getEdges(int vertex);
-    
-    void clear();
-    
+
+    void addNode(int id, const char* tableName);
+    void addEdge(int src, int dst, float weight, const char* condition);
+
+    int getNodeCount() const;
+    int getEdgeCount() const;
+    GraphEdge* getEdges() const;
+    const char* getNodeName(int id) const;
+    void printGraph() const;
+
 private:
-    Vertex* vertices_;
-    int max_vertices_;
-    int num_vertices_;
-    
-    Vertex* findVertex(int id);
+    int maxNodes_;
+    int nodeCount_;
+    int edgeCount_;
+    int maxEdges_;
+
+    float** adjMatrix_;
+    GraphEdge* edgeList_;
+    char** names_;
+
+    void copyString(char* dest, int destSize, const char* src);
+    void registerDefaultEdges();
 };
 
 } // namespace NanoDB

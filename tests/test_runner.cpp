@@ -129,10 +129,112 @@ void testIndexManager() {
     std::cout << "[IndexManager] Tests complete." << std::endl;
 }
 
+void testGraph() {
+    std::cout << "[Graph] Starting tests..." << std::endl;
+
+    Graph graph(10);
+
+    if (graph.getNodeCount() == 3) {
+        std::cout << "[Graph] Auto-registered 3 nodes: PASS" << std::endl;
+    } else {
+        std::cout << "[Graph] Auto-registered 3 nodes: FAIL (count=" << graph.getNodeCount() << ")" << std::endl;
+    }
+
+    if (graph.getEdgeCount() == 3) {
+        std::cout << "[Graph] Auto-registered 3 edges: PASS" << std::endl;
+    } else {
+        std::cout << "[Graph] Auto-registered 3 edges: FAIL (count=" << graph.getEdgeCount() << ")" << std::endl;
+    }
+
+    bool namesPass = true;
+    if (graph.getNodeName(0) == nullptr ||
+        graph.getNodeName(0)[0] != 'c' || graph.getNodeName(0)[1] != 'u') {
+        namesPass = false;
+    }
+    if (graph.getNodeName(1) == nullptr ||
+        graph.getNodeName(1)[0] != 'o' || graph.getNodeName(1)[1] != 'r') {
+        namesPass = false;
+    }
+    if (graph.getNodeName(2) == nullptr ||
+        graph.getNodeName(2)[0] != 'l' || graph.getNodeName(2)[1] != 'i') {
+        namesPass = false;
+    }
+    std::cout << "[Graph] Node names correct: " << (namesPass ? "PASS" : "FAIL") << std::endl;
+
+    GraphEdge* edges = graph.getEdges();
+    bool weightsPass = true;
+    for (int i = 0; i < graph.getEdgeCount(); ++i) {
+        if (edges[i].src == 0 && edges[i].dst == 1 && edges[i].weight != 2.0f) {
+            weightsPass = false;
+        }
+        if (edges[i].src == 1 && edges[i].dst == 2 && edges[i].weight != 3.0f) {
+            weightsPass = false;
+        }
+        if (edges[i].src == 0 && edges[i].dst == 2 && edges[i].weight != 8.0f) {
+            weightsPass = false;
+        }
+    }
+    std::cout << "[Graph] Edge weights correct: " << (weightsPass ? "PASS" : "FAIL") << std::endl;
+
+    graph.printGraph();
+
+    std::cout << "[Graph] Tests complete." << std::endl;
+}
+
+void testMST() {
+    std::cout << "[MST] Starting tests..." << std::endl;
+
+    Graph graph(10);
+    MSTOptimizer optimizer;
+    int mstCount = 0;
+    GraphEdge* mst = optimizer.computeMST(graph, mstCount);
+
+    if (mstCount == 2) {
+        std::cout << "[MST] MST has 2 edges: PASS" << std::endl;
+    } else {
+        std::cout << "[MST] MST has 2 edges: FAIL (count=" << mstCount << ")" << std::endl;
+    }
+
+    float cost = optimizer.computeTotalCost(mst, mstCount);
+    if (cost == 5.0f) {
+        std::cout << "[MST] Total cost = 5.0 (2.0 + 3.0): PASS" << std::endl;
+    } else {
+        std::cout << "[MST] Total cost = 5.0: FAIL (got " << cost << ")" << std::endl;
+    }
+
+    if (mst != nullptr && mstCount > 0) {
+        char* path = optimizer.buildJoinPath(mst, mstCount, graph);
+        bool pathPass = true;
+        int i = 0;
+        const char* expected = "customer -> orders -> lineitem";
+        while (path[i] != '\0' && expected[i] != '\0') {
+            if (path[i] != expected[i]) {
+                pathPass = false;
+                break;
+            }
+            i++;
+        }
+        if (path[i] != expected[i]) {
+            pathPass = false;
+        }
+        std::cout << "[MST] Join path: " << path << std::endl;
+        std::cout << "[MST] Path correct: " << (pathPass ? "PASS" : "FAIL") << std::endl;
+        delete[] path;
+    }
+
+    if (mst != nullptr) {
+        delete[] mst;
+    }
+
+    std::cout << "[MST] Tests complete." << std::endl;
+}
+
 void runTests() {
     std::cout << "Running NanoDB Tests..." << std::endl;
     testAVLTree();
     testIndexManager();
+    testGraph();
+    testMST();
 }
 
 int main() {
