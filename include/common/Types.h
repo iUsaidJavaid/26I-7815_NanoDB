@@ -23,7 +23,11 @@ public:
     virtual bool lessThan(const Field* other) const = 0;
     virtual void print() const = 0;
     virtual Field* clone() const = 0;
+    virtual int serialize(char* buffer, int maxLen) const = 0;
+    virtual int deserialize(const char* buffer, int maxLen) = 0;
     virtual ~Field() = default;
+    
+    static Field* createFromTypeTag(unsigned char typeTag);
     
     bool operator==(const Field* other) const {
         return equals(other);
@@ -77,10 +81,29 @@ public:
     Field* clone() const override {
         return new IntField(value_);
     }
-    
+
+    int serialize(char* buffer, int maxLen) const override {
+        if (maxLen < 5) return -1;
+        buffer[0] = 0x01;
+        buffer[1] = (value_ >> 24) & 0xFF;
+        buffer[2] = (value_ >> 16) & 0xFF;
+        buffer[3] = (value_ >> 8) & 0xFF;
+        buffer[4] = value_ & 0xFF;
+        return 5;
+    }
+
+    int deserialize(const char* buffer, int maxLen) override {
+        if (maxLen < 5 || buffer[0] != 0x01) return -1;
+        value_ = ((unsigned char)buffer[1] << 24) |
+                 ((unsigned char)buffer[2] << 16) |
+                 ((unsigned char)buffer[3] << 8) |
+                 (unsigned char)buffer[4];
+        return 5;
+    }
+
     int getValue() const { return value_; }
     void setValue(int value) { value_ = value; }
-    
+
 private:
     int value_;
 };
@@ -112,10 +135,32 @@ public:
     Field* clone() const override {
         return new FloatField(value_);
     }
-    
+
+    int serialize(char* buffer, int maxLen) const override {
+        if (maxLen < 5) return -1;
+        buffer[0] = 0x02;
+        char* floatBytes = (char*)&value_;
+        buffer[1] = floatBytes[0];
+        buffer[2] = floatBytes[1];
+        buffer[3] = floatBytes[2];
+        buffer[4] = floatBytes[3];
+        return 5;
+    }
+
+    int deserialize(const char* buffer, int maxLen) override {
+        if (maxLen < 5 || buffer[0] != 0x02) return -1;
+        char floatBytes[4];
+        floatBytes[0] = buffer[1];
+        floatBytes[1] = buffer[2];
+        floatBytes[2] = buffer[3];
+        floatBytes[3] = buffer[4];
+        value_ = *((float*)floatBytes);
+        return 5;
+    }
+
     float getValue() const { return value_; }
     void setValue(float value) { value_ = value; }
-    
+
 private:
     float value_;
 };
@@ -176,7 +221,31 @@ public:
     Field* clone() const override {
         return new StringField(value_);
     }
-    
+
+    int serialize(char* buffer, int maxLen) const override {
+        int len = 0;
+        while (value_[len] != '\0') ++len;
+        if (maxLen < 3 + len) return -1;
+        buffer[0] = 0x03;
+        buffer[1] = (len >> 8) & 0xFF;
+        buffer[2] = len & 0xFF;
+        for (int i = 0; i < len; ++i) {
+            buffer[3 + i] = value_[i];
+        }
+        return 3 + len;
+    }
+
+    int deserialize(const char* buffer, int maxLen) override {
+        if (maxLen < 3 || buffer[0] != 0x03) return -1;
+        int len = ((unsigned char)buffer[1] << 8) | (unsigned char)buffer[2];
+        if (maxLen < 3 + len) return -1;
+        for (int i = 0; i < len && i < MAX_LENGTH - 1; ++i) {
+            value_[i] = buffer[3 + i];
+        }
+        value_[len < MAX_LENGTH - 1 ? len : MAX_LENGTH - 1] = '\0';
+        return 3 + len;
+    }
+
     const char* getValue() const { return value_; }
     void setValue(const char* value) {
         int i = 0;
@@ -186,7 +255,7 @@ public:
         }
         value_[i] = '\0';
     }
-    
+
 private:
     char value_[MAX_LENGTH];
 };

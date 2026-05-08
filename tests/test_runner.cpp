@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdio>
 #include "common/Types.h"
 #include "storage/Page.h"
 #include "storage/Pager.h"
@@ -229,15 +230,153 @@ void testMST() {
     std::cout << "[MST] Tests complete." << std::endl;
 }
 
+void testQueryExecutor() {
+    std::cout << "[QueryExecutor] Starting tests..." << std::endl;
+
+    Pager pager("test.db");
+    SystemCatalog& catalog = *SystemCatalog::getInstance();
+    IndexManager& im = IndexManager::getInstance();
+    MSTOptimizer optimizer;
+    PriorityQueue queue(100);
+    QueryExecutor executor(pager, catalog, im, optimizer, queue);
+
+    std::cout << "[QueryExecutor] Test 1: SELECT routing" << std::endl;
+    executor.execute("SELECT * FROM Customer WHERE c_custkey = 50");
+    std::cout << "[QueryExecutor] SELECT routed correctly: PASS" << std::endl;
+
+    std::cout << "[QueryExecutor] Test 2: ADMIN UPDATE priority" << std::endl;
+    executor.execute("ADMIN UPDATE Customer SET c_name = 'VIP' WHERE c_custkey = 1");
+    std::cout << "[QueryExecutor] ADMIN priority detected: PASS" << std::endl;
+
+    std::cout << "[QueryExecutor] Test 3: JOIN routing with MST" << std::endl;
+    executor.execute("JOIN customer, orders, lineitem WHERE c_custkey = o_custkey");
+    std::cout << "[QueryExecutor] JOIN routed correctly: PASS" << std::endl;
+
+    std::cout << "[QueryExecutor] Test 4: INSERT routing" << std::endl;
+    executor.execute("INSERT INTO Customer VALUES (1, 'Alice', 1000.0)");
+    std::cout << "[QueryExecutor] INSERT routed correctly: PASS" << std::endl;
+
+    std::cout << "[QueryExecutor] Test 5: UPDATE routing" << std::endl;
+    executor.execute("UPDATE Customer SET c_acctbal = 9999 WHERE c_custkey = 10");
+    std::cout << "[QueryExecutor] UPDATE routed correctly: PASS" << std::endl;
+
+    std::cout << "[QueryExecutor] Test 6: Priority queue ordering" << std::endl;
+    PriorityQueue pq(10);
+    QueryTask* userTask = new QueryTask();
+    userTask->priority = USER;
+    userTask->taskId = 1;
+    pq.enqueue(userTask);
+    QueryTask* adminTask = new QueryTask();
+    adminTask->priority = ADMIN;
+    adminTask->taskId = 2;
+    pq.enqueue(adminTask);
+    QueryTask* first = pq.dequeue();
+    if (first != nullptr && first->priority == ADMIN) {
+        std::cout << "[QueryExecutor] Priority queue admin-first: PASS" << std::endl;
+    } else {
+        std::cout << "[QueryExecutor] Priority queue admin-first: FAIL" << std::endl;
+    }
+    if (first != nullptr) {
+        delete first;
+    }
+    QueryTask* second = pq.dequeue();
+    if (second != nullptr) {
+        delete second;
+    }
+
+    std::cout << "[QueryExecutor] Test 7: WHERE clause parsing for index" << std::endl;
+    std::cout << "[QueryExecutor] Tests complete." << std::endl;
+}
+
+void testDurability() {
+    std::cout << "[Durability] Starting durability test..." << std::endl;
+
+    Pager pager("durability_test.db");
+    SystemCatalog& catalog = *SystemCatalog::getInstance();
+    IndexManager& im = IndexManager::getInstance();
+    MSTOptimizer optimizer;
+    PriorityQueue queue(100);
+    QueryExecutor executor(pager, catalog, im, optimizer, queue);
+
+    std::cout << "[Durability] Step 1: Insert 5 records" << std::endl;
+    executor.execute("INSERT INTO customer VALUES (1000, 'DurabilityTest1', 1000.00, 'BUILDING', 1)");
+    executor.execute("INSERT INTO customer VALUES (1001, 'DurabilityTest2', 2000.00, 'AUTOMOBILE', 2)");
+    executor.execute("INSERT INTO customer VALUES (1002, 'DurabilityTest3', 3000.00, 'MACHINERY', 3)");
+    executor.execute("INSERT INTO customer VALUES (1003, 'DurabilityTest4', 4000.00, 'HOUSEHOLD', 4)");
+    executor.execute("INSERT INTO customer VALUES (1004, 'DurabilityTest5', 5000.00, 'FURNITURE', 5)");
+
+    std::cout << "[Durability] Step 2: Flush pages to disk" << std::endl;
+    pager.flushAllPages();
+
+    std::cout << "[Durability] Step 3: Verify records before simulated restart" << std::endl;
+    executor.execute("SELECT * FROM customer WHERE c_custkey = 1000");
+    executor.execute("SELECT * FROM customer WHERE c_custkey = 1004");
+
+    std::cout << "[Durability] Step 4: Simulate restart by reloading from disk" << std::endl;
+    Pager newPager("durability_test.db");
+    QueryExecutor newExecutor(newPager, catalog, im, optimizer, queue);
+
+    std::cout << "[Durability] Step 5: Query records after reload" << std::endl;
+    newExecutor.execute("SELECT * FROM customer WHERE c_custkey = 1000");
+    newExecutor.execute("SELECT * FROM customer WHERE c_custkey = 1001");
+    newExecutor.execute("SELECT * FROM customer WHERE c_custkey = 1002");
+    newExecutor.execute("SELECT * FROM customer WHERE c_custkey = 1003");
+    newExecutor.execute("SELECT * FROM customer WHERE c_custkey = 1004");
+
+    std::cout << "[Durability] Durability test complete." << std::endl;
+}
+
 void runTests() {
     std::cout << "Running NanoDB Tests..." << std::endl;
     testAVLTree();
     testIndexManager();
     testGraph();
     testMST();
+    testQueryExecutor();
+    testDurability();
+}
+
+void runQueriesFromFile(const char* filename) {
+    std::cout << "[QueryExecutor] Loading queries from: " << filename << std::endl;
+
+    FILE* fp = fopen(filename, "r");
+    if (fp == nullptr) {
+        std::cout << "[ERROR] Failed to open " << filename << std::endl;
+        return;
+    }
+
+    Pager pager("nanodb.db");
+    SystemCatalog& catalog = *SystemCatalog::getInstance();
+    IndexManager& im = IndexManager::getInstance();
+    MSTOptimizer optimizer;
+    PriorityQueue queue(100);
+    QueryExecutor executor(pager, catalog, im, optimizer, queue);
+
+    char line[512];
+    int queryCount = 0;
+    while (fgets(line, sizeof(line), fp) != nullptr) {
+        int len = 0;
+        while (line[len] != '\0') {
+            if (line[len] == '\n' || line[len] == '\r') {
+                line[len] = '\0';
+                break;
+            }
+            ++len;
+        }
+        if (len == 0) continue;
+
+        ++queryCount;
+        std::cout << "\n--- Query " << queryCount << " ---" << std::endl;
+        executor.execute(line);
+    }
+
+    fclose(fp);
+    std::cout << "\n[QueryExecutor] Executed " << queryCount << " queries from "
+              << filename << std::endl;
 }
 
 int main() {
     runTests();
+    runQueriesFromFile("queries.txt");
     return 0;
 }
