@@ -2,7 +2,8 @@
 #define NANODB_EXPRESSION_EVALUATOR_H
 
 #include "common/Types.h"
-#include "parser/ShuntingYard.h"
+#include "parser/Tokenizer.h"
+#include "parser/Stack.h"
 
 namespace NanoDB {
 
@@ -11,19 +12,14 @@ public:
     ExpressionEvaluator();
     ~ExpressionEvaluator();
     
-    Value evaluate(Token* postfix, int num_tokens);
+    bool evaluate(Token* postfixTokens, int count, const Row& row, const TableSchema& schema);
+    Field* evaluateArithmetic(Token* postfixTokens, int count, const Row& row, const TableSchema& schema);
     
 private:
-    struct EvalStack {
-        Value value;
-        EvalStack* next;
-    };
-    
-    EvalStack* stack_;
-    
-    void push(const Value& value);
-    Value pop();
-    bool isEmpty();
+    Field* resolveIdentifier(const char* name, const Row& row, const TableSchema& schema);
+    Field* coerceToFloat(Field* field);
+    Field* coerceToInt(Field* field);
+    bool isNumeric(Field* field);
 };
 
 } // namespace NanoDB

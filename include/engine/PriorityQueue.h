@@ -1,38 +1,54 @@
 #ifndef NANODB_PRIORITY_QUEUE_H
 #define NANODB_PRIORITY_QUEUE_H
 
+#include "common/Logger.h"
+
 namespace NanoDB {
+
+enum QueryPriority {
+    ADMIN = 0,
+    USER = 1
+};
+
+struct QueryTask {
+    char queryString[512];
+    QueryPriority priority;
+    int taskId;
+    
+    QueryTask() : priority(USER), taskId(0) {
+        for (int i = 0; i < 512; ++i) {
+            queryString[i] = '\0';
+        }
+    }
+    
+    bool isAdmin() const {
+        return priority == ADMIN;
+    }
+};
 
 class PriorityQueue {
 public:
-    struct QueueNode {
-        int priority;
-        int value;
-    };
-    
     PriorityQueue(int capacity);
     ~PriorityQueue();
     
-    bool enqueue(int priority, int value);
-    bool dequeue(int* value);
-    bool peek(int* value);
-    
-    bool isEmpty();
-    int size();
-    
-    void clear();
+    void enqueue(QueryTask* task);
+    QueryTask* dequeue();
+    QueryTask* peek() const;
+    bool isEmpty() const;
+    int size() const;
     
 private:
-    QueueNode* heap_;
+    QueryTask** heap_;
+    int heapSize_;
     int capacity_;
-    int size_;
     
-    void heapifyUp(int index);
-    void heapifyDown(int index);
+    void siftUp(int index);
+    void siftDown(int index);
     int parent(int index);
     int leftChild(int index);
     int rightChild(int index);
     void swap(int i, int j);
+    bool hasHigherPriority(QueryTask* a, QueryTask* b) const;
 };
 
 } // namespace NanoDB
