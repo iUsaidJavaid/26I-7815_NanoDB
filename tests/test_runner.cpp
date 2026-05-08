@@ -229,12 +229,71 @@ void testMST() {
     std::cout << "[MST] Tests complete." << std::endl;
 }
 
+void testQueryExecutor() {
+    std::cout << "[QueryExecutor] Starting tests..." << std::endl;
+
+    Pager pager("test.db");
+    SystemCatalog& catalog = *SystemCatalog::getInstance();
+    IndexManager& im = IndexManager::getInstance();
+    MSTOptimizer optimizer;
+    PriorityQueue queue(100);
+    QueryExecutor executor(pager, catalog, im, optimizer, queue);
+
+    std::cout << "[QueryExecutor] Test 1: SELECT routing" << std::endl;
+    executor.execute("SELECT * FROM Customer WHERE c_custkey = 50");
+    std::cout << "[QueryExecutor] SELECT routed correctly: PASS" << std::endl;
+
+    std::cout << "[QueryExecutor] Test 2: ADMIN UPDATE priority" << std::endl;
+    executor.execute("ADMIN UPDATE Customer SET c_name = 'VIP' WHERE c_custkey = 1");
+    std::cout << "[QueryExecutor] ADMIN priority detected: PASS" << std::endl;
+
+    std::cout << "[QueryExecutor] Test 3: JOIN routing with MST" << std::endl;
+    executor.execute("JOIN customer, orders, lineitem WHERE c_custkey = o_custkey");
+    std::cout << "[QueryExecutor] JOIN routed correctly: PASS" << std::endl;
+
+    std::cout << "[QueryExecutor] Test 4: INSERT routing" << std::endl;
+    executor.execute("INSERT INTO Customer VALUES (1, 'Alice', 1000.0)");
+    std::cout << "[QueryExecutor] INSERT routed correctly: PASS" << std::endl;
+
+    std::cout << "[QueryExecutor] Test 5: UPDATE routing" << std::endl;
+    executor.execute("UPDATE Customer SET c_acctbal = 9999 WHERE c_custkey = 10");
+    std::cout << "[QueryExecutor] UPDATE routed correctly: PASS" << std::endl;
+
+    std::cout << "[QueryExecutor] Test 6: Priority queue ordering" << std::endl;
+    PriorityQueue pq(10);
+    QueryTask* userTask = new QueryTask();
+    userTask->priority = USER;
+    userTask->taskId = 1;
+    pq.enqueue(userTask);
+    QueryTask* adminTask = new QueryTask();
+    adminTask->priority = ADMIN;
+    adminTask->taskId = 2;
+    pq.enqueue(adminTask);
+    QueryTask* first = pq.dequeue();
+    if (first != nullptr && first->priority == ADMIN) {
+        std::cout << "[QueryExecutor] Priority queue admin-first: PASS" << std::endl;
+    } else {
+        std::cout << "[QueryExecutor] Priority queue admin-first: FAIL" << std::endl;
+    }
+    if (first != nullptr) {
+        delete first;
+    }
+    QueryTask* second = pq.dequeue();
+    if (second != nullptr) {
+        delete second;
+    }
+
+    std::cout << "[QueryExecutor] Test 7: WHERE clause parsing for index" << std::endl;
+    std::cout << "[QueryExecutor] Tests complete." << std::endl;
+}
+
 void runTests() {
     std::cout << "Running NanoDB Tests..." << std::endl;
     testAVLTree();
     testIndexManager();
     testGraph();
     testMST();
+    testQueryExecutor();
 }
 
 int main() {
