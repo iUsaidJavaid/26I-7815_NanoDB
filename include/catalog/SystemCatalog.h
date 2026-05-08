@@ -1,46 +1,72 @@
 #ifndef NANODB_SYSTEM_CATALOG_H
 #define NANODB_SYSTEM_CATALOG_H
 
+#include <cstdio>
+#include "common/Types.h"
+#include "catalog/HashMap.h"
+
 namespace NanoDB {
+
+struct TableSchema {
+    char tableName[64];
+    char filePath[256];
+    ColumnSchema columns[16];
+    int columnCount;
+    int rootPageId;
+    int totalRows;
+    
+    TableSchema() : columnCount(0), rootPageId(0), totalRows(0) {
+        for (int i = 0; i < 64; ++i) {
+            tableName[i] = '\0';
+        }
+        for (int i = 0; i < 256; ++i) {
+            filePath[i] = '\0';
+        }
+    }
+    
+    int getColumnIndex(const char* name) const {
+        for (int i = 0; i < columnCount; ++i) {
+            int j = 0;
+            bool match = true;
+            while (name[j] != '\0' && columns[i].name[j] != '\0') {
+                if (name[j] != columns[i].name[j]) {
+                    match = false;
+                    break;
+                }
+                ++j;
+            }
+            if (match && name[j] == '\0' && columns[i].name[j] == '\0') {
+                return i;
+            }
+        }
+        return -1;
+    }
+};
 
 class SystemCatalog {
 public:
-    struct TableInfo {
-        int table_id;
-        char name[64];
-        int num_columns;
-        int root_page;
-    };
+    static SystemCatalog* getInstance();
+    static void destroy();
     
-    struct ColumnInfo {
-        int column_id;
-        char name[64];
-        int type;
-        int table_id;
-    };
+    void registerTable(TableSchema* schema);
+    TableSchema* getTable(const char* name);
+    bool tableExists(const char* name) const;
+    void loadFromDisk(const char* catalogFile);
+    void saveToDisk(const char* catalogFile);
+    void printAll() const;
     
+private:
     SystemCatalog();
     ~SystemCatalog();
     
-    bool createTable(const char* name, int num_columns);
-    bool dropTable(const char* name);
+    SystemCatalog(const SystemCatalog&);
+    SystemCatalog& operator=(const SystemCatalog&);
     
-    TableInfo* getTable(const char* name);
-    TableInfo* getTableById(int table_id);
+    void initializeTPCHTables();
     
-    bool addColumn(int table_id, const char* name, int type);
-    ColumnInfo* getColumn(int table_id, const char* name);
+    HashMap<char*, TableSchema*>* tableMap_;
     
-    void load();
-    void save();
-    
-private:
-    TableInfo* tables_;
-    ColumnInfo* columns_;
-    int num_tables_;
-    int num_columns_;
-    int max_tables_;
-    int max_columns_;
+    static SystemCatalog* instance_;
 };
 
 } // namespace NanoDB
