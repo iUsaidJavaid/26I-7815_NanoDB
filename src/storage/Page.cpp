@@ -6,61 +6,21 @@ void Page::writeRow(const Row& row, int& offset) {
     if (offset + 1 > PAGE_SIZE) {
         return;
     }
-    
+
     data[offset++] = (char)row.columnCount;
-    
+
     for (int i = 0; i < row.columnCount; ++i) {
         Field* field = row.fields[i];
         if (field == nullptr) {
             continue;
         }
-        
-        IntField* intField = dynamic_cast<IntField*>(field);
-        FloatField* floatField = dynamic_cast<FloatField*>(field);
-        StringField* stringField = dynamic_cast<StringField*>(field);
-        
-        if (intField != nullptr) {
-            if (offset + 5 > PAGE_SIZE) {
-                return;
-            }
-            data[offset++] = 0x01;
-            int value = intField->getValue();
-            data[offset++] = (value >> 24) & 0xFF;
-            data[offset++] = (value >> 16) & 0xFF;
-            data[offset++] = (value >> 8) & 0xFF;
-            data[offset++] = value & 0xFF;
-        } else if (floatField != nullptr) {
-            if (offset + 5 > PAGE_SIZE) {
-                return;
-            }
-            data[offset++] = 0x02;
-            float value = floatField->getValue();
-            char* floatBytes = (char*)&value;
-            data[offset++] = floatBytes[0];
-            data[offset++] = floatBytes[1];
-            data[offset++] = floatBytes[2];
-            data[offset++] = floatBytes[3];
-        } else if (stringField != nullptr) {
-            const char* strValue = stringField->getValue();
-            int len = 0;
-            while (strValue[len] != '\0') {
-                ++len;
-            }
-            
-            if (offset + 3 + len > PAGE_SIZE) {
-                return;
-            }
-            
-            data[offset++] = 0x03;
-            data[offset++] = (len >> 8) & 0xFF;
-            data[offset++] = len & 0xFF;
-            
-            for (int j = 0; j < len; ++j) {
-                data[offset++] = strValue[j];
-            }
+
+        int written = field->serialize(data + offset, PAGE_SIZE - offset);
+        if (written > 0) {
+            offset += written;
         }
     }
-    
+
     usedBytes = offset;
     isDirty = true;
 }
@@ -69,60 +29,31 @@ bool Page::readRow(Row& out, int& offset, const ColumnSchema* schema, int colCou
     if (offset >= PAGE_SIZE) {
         return false;
     }
-    
+
     int fieldCount = (unsigned char)data[offset++];
-    
+
     for (int i = 0; i < fieldCount && i < Row::MAX_COLUMNS; ++i) {
         if (offset >= PAGE_SIZE) {
             return false;
         }
-        
-        unsigned char typeTag = data[offset++];
-        
-        if (typeTag == 0x01) {
-            if (offset + 4 > PAGE_SIZE) {
-                return false;
-            }
-            int value = ((unsigned char)data[offset] << 24) |
-                        ((unsigned char)data[offset + 1] << 16) |
-                        ((unsigned char)data[offset + 2] << 8) |
-                        (unsigned char)data[offset + 3];
-            offset += 4;
-            out.addField(new IntField(value));
-        } else if (typeTag == 0x02) {
-            if (offset + 4 > PAGE_SIZE) {
-                return false;
-            }
-            char floatBytes[4];
-            floatBytes[0] = data[offset];
-            floatBytes[1] = data[offset + 1];
-            floatBytes[2] = data[offset + 2];
-            floatBytes[3] = data[offset + 3];
-            offset += 4;
-            float value = *((float*)floatBytes);
-            out.addField(new FloatField(value));
-        } else if (typeTag == 0x03) {
-            if (offset + 2 > PAGE_SIZE) {
-                return false;
-            }
-            int len = ((unsigned char)data[offset] << 8) | (unsigned char)data[offset + 1];
-            offset += 2;
-            
-            if (offset + len > PAGE_SIZE) {
-                return false;
-            }
-            
-            char strBuffer[StringField::MAX_LENGTH];
-            for (int j = 0; j < len && j < StringField::MAX_LENGTH - 1; ++j) {
-                strBuffer[j] = data[offset++];
-            }
-            strBuffer[len] = '\0';
-            offset += len - (len < StringField::MAX_LENGTH - 1 ? len : StringField::MAX_LENGTH - 1);
-            
-            out.addField(new StringField(strBuffer));
+
+        unsigned char typeTag = data[offset];
+        Field* field = Field::createFromTypeTag(typeTag);
+
+        if (field == nullptr) {
+            return false;
         }
+
+        int bytesRead = field->deserialize(data + offset, PAGE_SIZE - offset);
+        if (bytesRead < 0) {
+            delete field;
+            return false;
+        }
+
+        offset += bytesRead;
+        out.addField(field);
     }
-    
+
     return true;
 }
 

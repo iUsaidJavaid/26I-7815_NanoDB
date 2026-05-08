@@ -2,6 +2,10 @@
 
 A lightweight database engine implemented in C++17 without STL containers.
 
+## GitHub Repository
+
+https://github.com/iUsaidJavaid/26I-7815_NanoDB
+
 ## Project Structure
 
 ```
@@ -62,11 +66,26 @@ A lightweight database engine implemented in C++17 without STL containers.
 
 ## Building
 
+Using CMake:
+
 ```bash
 mkdir build
 cd build
 cmake ..
-make
+cmake --build .
+```
+
+Or on Windows using PowerShell:
+```powershell
+mkdir build
+cd build
+cmake .. -G "MinGW Makefiles"
+cmake --build .
+```
+
+Alternatively, use the provided setup script:
+```bash
+./setup.sh
 ```
 
 ## Running
@@ -80,3 +99,8 @@ make
 ```bash
 ./test_runner
 ```
+
+The test runner will:
+1. Run unit tests for AVL Tree, Index Manager, Graph, MST, and Query Executor
+2. Execute all 50 queries from `queries.txt`
+3. Output execution logs to console and `logs/nanodb_execution.log`
