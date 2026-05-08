@@ -21,6 +21,7 @@ set(SOURCES
     src/parser/ShuntingYard.cpp
     src/parser/ExpressionEvaluator.cpp
     src/index/AVLTree.cpp
+    src/index/IndexManager.cpp
     src/optimizer/Graph.cpp
     src/optimizer/MST.cpp
     src/engine/QueryExecutor.cpp
@@ -44,6 +45,7 @@ set(TEST_SOURCES
     src/parser/ShuntingYard.cpp
     src/parser/ExpressionEvaluator.cpp
     src/index/AVLTree.cpp
+    src/index/IndexManager.cpp
     src/optimizer/Graph.cpp
     src/optimizer/MST.cpp
     src/engine/QueryExecutor.cpp
