@@ -9,6 +9,7 @@
 #include "parser/ShuntingYard.h"
 #include "parser/ExpressionEvaluator.h"
 #include "index/AVLTree.h"
+#include "index/IndexManager.h"
 #include "optimizer/Graph.h"
 #include "optimizer/MST.h"
 #include "engine/QueryExecutor.h"
@@ -81,9 +82,57 @@ void testAVLTree() {
     std::cout << "[AVLTree] Tests complete." << std::endl;
 }
 
+void testIndexManager() {
+    std::cout << "[IndexManager] Starting tests..." << std::endl;
+
+    IndexManager& im = IndexManager::getInstance();
+
+    im.createIndex("Customer", "c_custkey");
+    if (im.hasIndex("Customer", "c_custkey")) {
+        std::cout << "[IndexManager] Create and hasIndex: PASS" << std::endl;
+    } else {
+        std::cout << "[IndexManager] Create and hasIndex: FAIL" << std::endl;
+    }
+
+    for (int i = 1; i <= 100; ++i) {
+        im.insertEntry("Customer", "c_custkey", i, i * 100);
+    }
+
+    int page = im.lookupPage("Customer", "c_custkey", 50);
+    if (page == 5000) {
+        std::cout << "[IndexManager] Lookup page 50: PASS" << std::endl;
+    } else {
+        std::cout << "[IndexManager] Lookup page 50: FAIL (got " << page << ")" << std::endl;
+    }
+
+    int count = 0;
+    int* range = im.rangeLookup("Customer", "c_custkey", 10, 20, count);
+    bool rangePass = (count == 11);
+    if (rangePass) {
+        for (int i = 0; i < count; ++i) {
+            if (range[i] != (10 + i) * 100) {
+                rangePass = false;
+                break;
+            }
+        }
+    }
+    std::cout << "[IndexManager] RangeLookup [10,20]: " << (rangePass ? "PASS" : "FAIL") << std::endl;
+    delete[] range;
+
+    im.dropIndex("Customer", "c_custkey");
+    if (!im.hasIndex("Customer", "c_custkey")) {
+        std::cout << "[IndexManager] Drop index: PASS" << std::endl;
+    } else {
+        std::cout << "[IndexManager] Drop index: FAIL" << std::endl;
+    }
+
+    std::cout << "[IndexManager] Tests complete." << std::endl;
+}
+
 void runTests() {
     std::cout << "Running NanoDB Tests..." << std::endl;
     testAVLTree();
+    testIndexManager();
 }
 
 int main() {
