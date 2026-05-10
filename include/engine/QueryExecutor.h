@@ -24,7 +24,8 @@ public:
     QueryTask* dequeueTask();
     void executeTask(QueryTask* task);
     void executeSelect(const char* tableName, const char* whereClause,
-                       const char* joinTable2, const char* joinTable3);
+                       const char* joinTable2, const char* joinTable3,
+                       bool forceSequential = false, bool forceIndexed = false, bool isStress = false);
     void executeInsert(const char* tableName, Field** values, int valueCount);
     void executeUpdate(const char* tableName, const char* whereClause,
                        const char* setClause);

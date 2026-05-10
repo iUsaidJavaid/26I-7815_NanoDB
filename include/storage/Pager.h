@@ -15,10 +15,12 @@ public:
     ~Pager();
     
     Page* fetchPage(int pageId);
+    Page* getPage(int pageId) { return fetchPage(pageId); }
     void writePage(int pageId);
     Page* allocateNewPage();
     void flushAll();
     int getTotalPages() const;
+    int getNumPages() const { return getTotalPages(); }
     void close();
     
 private:

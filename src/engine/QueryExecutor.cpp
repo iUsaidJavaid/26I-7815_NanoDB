@@ -324,9 +324,32 @@ void QueryExecutor::executeTask(QueryTask* task) {
     if (startsWith(q, "SELECT ") || startsWith(q, "select ")) {
         char tableName[64] = {0};
         char whereClause[256] = {0};
+        bool forceSequential = false;
+        bool forceIndexed = false;
+        bool isStress = false;
+        
+        // Parse for SEQUENTIAL, INDEXED, STRESS keywords
+        const char* selectPtr = q;
+        if (startsWith(q, "SELECT ")) {
+            selectPtr += 7;
+        } else if (startsWith(q, "select ")) {
+            selectPtr += 7;
+        }
+        
+        if (startsWith(selectPtr, "SEQUENTIAL ") || startsWith(selectPtr, "sequential ")) {
+            forceSequential = true;
+            selectPtr += 10;
+        } else if (startsWith(selectPtr, "INDEXED ") || startsWith(selectPtr, "indexed ")) {
+            forceIndexed = true;
+            selectPtr += 8;
+        } else if (startsWith(selectPtr, "STRESS ") || startsWith(selectPtr, "stress ")) {
+            isStress = true;
+            selectPtr += 7;
+        }
+        
         if (extractTableFromSelect(q, tableName, 64, whereClause, 256)) {
             printf("[LOG] Routing to executeSelect: table=%s, where=%s\n", tableName, whereClause);
-            executeSelect(tableName, whereClause, nullptr, nullptr);
+            executeSelect(tableName, whereClause, nullptr, nullptr, forceSequential, forceIndexed, isStress);
         }
     } else if (startsWith(q, "INSERT ") || startsWith(q, "insert ")) {
         char tableName[64] = {0};
@@ -365,10 +388,20 @@ void QueryExecutor::executeTask(QueryTask* task) {
 }
 
 void QueryExecutor::executeSelect(const char* tableName, const char* whereClause,
-                                  const char* joinTable2, const char* joinTable3) {
+                                  const char* joinTable2, const char* joinTable3,
+                                  bool forceSequential, bool forceIndexed, bool isStress) {
     printf("[LOG] executeSelect: table=%s", tableName);
     if (whereClause[0] != '\0') {
         printf(", WHERE=%s", whereClause);
+    }
+    if (forceSequential) {
+        printf(" [SEQUENTIAL]");
+    }
+    if (forceIndexed) {
+        printf(" [INDEXED]");
+    }
+    if (isStress) {
+        printf(" [STRESS]");
     }
     printf("\n");
 
@@ -402,35 +435,48 @@ void QueryExecutor::executeSelect(const char* tableName, const char* whereClause
             printf("[LOG] Detected indexed column lookup: %s = %d\n", indexedColumn, indexedValue);
             char colName[64] = {0};
             copyString(colName, 64, indexedColumn);
-            if (indexManager_.hasIndex(tableName, colName)) {
-                int pageId = indexManager_.lookupPage(tableName, colName,
-                                                       indexedValue);
-                printf("[LOG] Index lookup returned pageId=%d\n", pageId);
-                if (pageId >= 0) {
-                    Page* page = pager_.getPage(pageId);
-                    if (page != nullptr) {
-                        int offset = 0;
-                        Row row;
-                        while (page->readRow(row, offset, schema->columns,
-                                              schema->columnCount)) {
-                            bool match = true;
-                            if (postfix != nullptr && postfixCount > 0) {
-                                match = evaluator_.evaluate(postfix, postfixCount,
-                                                            row, *schema);
-                            }
-                            if (match) {
-                                printf("[RESULT] ");
-                                row.print();
-                            }
-                            row.~Row();
-                            new (&row) Row();
+        }
+    }
+    
+    // Override index usage based on flags
+    if (forceSequential) {
+        useIndex = false;
+        printf("[LOG] Force sequential scan (SEQUENTIAL keyword)\n");
+    }
+    if (forceIndexed && !useIndex) {
+        printf("[LOG] Force indexed scan requested but no index available\n");
+    }
+    
+    if (useIndex) {
+        char colName[64] = {0};
+        copyString(colName, 64, indexedColumn);
+        if (indexManager_.hasIndex(tableName, colName)) {
+            int pageId = indexManager_.lookupPage(tableName, colName,
+                                                   indexedValue);
+            printf("[LOG] Index lookup returned pageId=%d\n", pageId);
+            if (pageId >= 0) {
+                Page* page = pager_.getPage(pageId);
+                if (page != nullptr) {
+                    int offset = 0;
+                    Row row;
+                    while (page->readRow(row, offset, schema->columns,
+                                          schema->columnCount)) {
+                        bool match = true;
+                        if (postfix != nullptr && postfixCount > 0) {
+                            match = evaluator_.evaluate(postfix, postfixCount,
+                                                        row, *schema);
                         }
+                        if (match) {
+                            printf("[RESULT] ");
+                            row.print();
+                        }
+                        row.clear();
                     }
                 }
-            } else {
-                printf("[LOG] No index on %s, falling back to sequential scan\n", colName);
-                useIndex = false;
             }
+        } else {
+            printf("[LOG] No index on %s, falling back to sequential scan\n", colName);
+            useIndex = false;
         }
     }
 
@@ -577,8 +623,7 @@ void QueryExecutor::executeUpdate(const char* tableName,
                 printf("[LOG] Updated row on page %d\n", i);
                 ++rowsUpdated;
             }
-            row.~Row();
-            new (&row) Row();
+            row.clear();
         }
     }
 

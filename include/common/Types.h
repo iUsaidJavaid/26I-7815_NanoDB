@@ -281,6 +281,16 @@ struct Row {
         }
     }
     
+    void clear() {
+        for (int i = 0; i < columnCount; ++i) {
+            if (fields[i] != nullptr) {
+                delete fields[i];
+                fields[i] = nullptr;
+            }
+        }
+        columnCount = 0;
+    }
+    
     bool addField(Field* field) {
         if (columnCount >= MAX_COLUMNS || field == nullptr) {
             return false;

@@ -103,14 +103,14 @@ int main() {
         return 1;
     }
 
-    char line[512];
+    // Phase 1: Read all queries into buffer
+    char queries[100][512];
     int queryCount = 0;
-    int totalQueries = 50;
-    int shutdownCount = 0;
-
-    printf("[RUNNER] Executing queries from queries.txt...\n\n");
-
-    while (fgets(line, sizeof(line), fp) != nullptr) {
+    int shutdownIndex = -1;
+    char line[512];
+    
+    printf("[RUNNER] Phase 1: Reading all queries for batch enqueue...\n");
+    while (fgets(line, sizeof(line), fp) != nullptr && queryCount < 100) {
         // Remove newline
         int len = 0;
         while (line[len] != '\0' && line[len] != '\n' && line[len] != '\r') {
@@ -128,22 +128,27 @@ int main() {
             continue;
         }
 
-        ++queryCount;
-        printf("[RUNNER] Executing query %d/%50: %s\n", queryCount, line);
-
-        // Special handling for SHUTDOWN command
-        bool isShutdown = false;
+        // Copy query to buffer
         int i = 0;
-        while (line[i] != '\0') {
-            if (line[i] == 'S' || line[i] == 's') {
-                if (line[i+1] == 'H' || line[i+1] == 'h') {
-                    if (line[i+2] == 'U' || line[i+2] == 'u') {
-                        if (line[i+3] == 'T' || line[i+3] == 't') {
-                            if (line[i+4] == 'D' || line[i+4] == 'd') {
-                                if (line[i+5] == 'O' || line[i+5] == 'o') {
-                                    if (line[i+6] == 'W' || line[i+6] == 'w') {
-                                        if (line[i+7] == 'N' || line[i+7] == 'n') {
+        for (i = 0; i < len && i < 511; ++i) {
+            queries[queryCount][i] = line[i];
+        }
+        queries[queryCount][i] = '\0';
+        
+        // Check for SHUTDOWN command
+        bool isShutdown = false;
+        int j = 0;
+        while (queries[queryCount][j] != '\0') {
+            if (queries[queryCount][j] == 'S' || queries[queryCount][j] == 's') {
+                if (queries[queryCount][j+1] == 'H' || queries[queryCount][j+1] == 'h') {
+                    if (queries[queryCount][j+2] == 'U' || queries[queryCount][j+2] == 'u') {
+                        if (queries[queryCount][j+3] == 'T' || queries[queryCount][j+3] == 't') {
+                            if (queries[queryCount][j+4] == 'D' || queries[queryCount][j+4] == 'd') {
+                                if (queries[queryCount][j+5] == 'O' || queries[queryCount][j+5] == 'o') {
+                                    if (queries[queryCount][j+6] == 'W' || queries[queryCount][j+6] == 'w') {
+                                        if (queries[queryCount][j+7] == 'N' || queries[queryCount][j+7] == 'n') {
                                             isShutdown = true;
+                                            shutdownIndex = queryCount;
                                             break;
                                         }
                                     }
@@ -153,37 +158,81 @@ int main() {
                     }
                 }
             }
-            ++i;
+            ++j;
         }
-
-        if (isShutdown) {
-            printf("[RUNNER] SHUTDOWN command detected\n");
-            Logger::getInstance()->logInfo("SHUTDOWN command: flushing to disk");
-            
-            pager.flushAll();
-            catalog.saveToDisk();
-            
-            ++shutdownCount;
-            
-            // Simulate restart by reinitializing pager from disk
-            printf("[RUNNER] Simulating restart (reloading from disk)...\n");
-            Logger::getInstance()->logInfo("Simulating restart: reloading pager from disk");
-            
-            // Note: In a real implementation, we would destroy and recreate the pager
-            // For this simulation, we just log the action
-            Logger::getInstance()->logInfo("Pager reloaded from disk after shutdown");
-            
-            continue;
-        }
-
-        // Execute query
-        executor.execute(line);
         
-        // Flush log after each query
-        Logger::getInstance()->logInfo("Query executed successfully");
+        if (isShutdown) {
+            break;
+        }
+        
+        ++queryCount;
     }
-
     fclose(fp);
+    
+    printf("[RUNNER] Phase 1 complete: Read %d queries before SHUTDOWN.\n", queryCount);
+    
+    // Phase 2: Batch enqueue all queries
+    printf("[RUNNER] Phase 2: Batch enqueuing %d queries...\n", queryCount);
+    for (int i = 0; i < queryCount; ++i) {
+        QueryTask* task = new QueryTask();
+        int j = 0;
+        for (j = 0; queries[i][j] != '\0' && j < 511; ++j) {
+            task->queryString[j] = queries[i][j];
+        }
+        task->queryString[j] = '\0';
+        task->taskId = i + 1;
+        
+        if (startsWith(queries[i], "ADMIN ")) {
+            task->priority = ADMIN;
+            printf("[RUNNER] Enqueuing ADMIN query %d: %s\n", task->taskId, task->queryString);
+        } else {
+            task->priority = USER;
+        }
+        
+        executor.enqueueTask(task);
+        printf("[RUNNER] Enqueued task %d with priority=%s\n", task->taskId,
+               (task->priority == ADMIN ? "ADMIN" : "USER"));
+    }
+    
+    printf("[RUNNER] Phase 2 complete: All %d queries enqueued.\n", queryCount);
+    
+    // Phase 3: Process all queued tasks
+    printf("[RUNNER] Phase 3: Processing queued tasks...\n");
+    int processed = 0;
+    while (processed < queryCount) {
+        QueryTask* next = executor.dequeueTask();
+        if (next == nullptr) {
+            printf("[ERROR] Priority queue returned nullptr prematurely\n");
+            break;
+        }
+        
+        printf("[RUNNER] Processing task %d: %s\n", next->taskId, next->queryString);
+        executor.executeTask(next);
+        delete next;
+        ++processed;
+    }
+    
+    printf("[RUNNER] Phase 3 complete: Processed %d tasks.\n", processed);
+    
+    // Handle SHUTDOWN command
+    if (shutdownIndex >= 0) {
+        printf("[RUNNER] SHUTDOWN command detected\n");
+        Logger::getInstance()->logInfo("SHUTDOWN command: flushing to disk");
+        
+        pager.flushAll();
+        catalog.saveToDisk("data/catalog.bin");
+        
+        // Simulate restart by reinitializing pager from disk
+        printf("[RUNNER] Simulating restart (reloading from disk)...\n");
+        Logger::getInstance()->logInfo("Simulating restart: reloading pager from disk");
+        
+        // Note: In a real implementation, we would destroy and recreate the pager
+        // For this simulation, we just log the action
+        Logger::getInstance()->logInfo("Pager reloaded from disk after shutdown");
+    }
+    
+    printf("[RUNNER] Processed %d queries in batch mode.\n", processed);
+    Logger::getInstance()->logInfo("Query processing complete");
 
     // Step 12: Print summary
     printf("\n[RUNNER] =============================\n");
