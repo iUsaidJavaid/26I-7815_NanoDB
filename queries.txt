@@ -39,6 +39,20 @@ SELECT FROM customer WHERE c_custkey == 33
 SELECT FROM customer WHERE c_custkey == 34
 SELECT FROM customer WHERE c_custkey == 35
 SELECT FROM customer WHERE c_custkey == 36
+SELECT FROM customer WHERE c_custkey == 37
+SELECT FROM customer WHERE c_custkey == 38
+SELECT FROM customer WHERE c_custkey == 39
+SELECT FROM customer WHERE c_custkey == 40
+SELECT FROM customer WHERE c_custkey == 41
+SELECT FROM customer WHERE c_custkey == 42
+SELECT FROM customer WHERE c_custkey == 43
+SELECT FROM customer WHERE c_custkey == 44
+SELECT FROM customer WHERE c_custkey == 45
+SELECT FROM customer WHERE c_custkey == 46
+SELECT FROM customer WHERE c_custkey == 47
+SELECT FROM customer WHERE c_custkey == 48
+SELECT FROM customer WHERE c_custkey == 49
+SELECT FROM customer WHERE c_custkey == 50
 ADMIN UPDATE customer SET c_acctbal = 9999.99 WHERE c_custkey == 1
 SELECT FROM orders WHERE ( (o_totalprice * 1.5) > 100000 AND (o_custkey % 2 == 0) ) OR o_orderstatus != "O"
 INSERT INTO customer VALUES (99991, "Test Alpha", 1234.56, "BUILDING", 5)

@@ -199,17 +199,18 @@ void AVLTree::rangeCollect(AVLNode* node, int low, int high, int* result, int& i
 
 int* AVLTree::rangeSearch(int low, int high, int& count) {
     count = 0;
-    int tempIndex = 0;
-    rangeCollect(root_, low, high, nullptr, tempIndex);
-    count = tempIndex;
-
-    if (count == 0) {
+    if (nodeCount_ == 0) {
         return nullptr;
     }
-
-    int* result = new int[count];
-    tempIndex = 0;
-    rangeCollect(root_, low, high, result, tempIndex);
+    
+    int* result = new int[nodeCount_];
+    rangeCollect(root_, low, high, result, count);
+    
+    if (count == 0) {
+        delete[] result;
+        return nullptr;
+    }
+    
     return result;
 }
 

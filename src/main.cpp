@@ -195,10 +195,13 @@ int main(int argc, char* argv[]) {
             printf("[ERROR] Could not open queries.txt\n");
             logger->logError("Failed to open queries.txt");
         } else {
+            // Phase 1: Read all queries and batch enqueue them
+            char queries[100][1024];
+            int queryCount = 0;
             char line[1024];
-            int queryNum = 0;
             
-            while (fgets(line, sizeof(line), queryFile) != nullptr && !g_shutdownRequested) {
+            printf("[BATCH] Reading all queries for batch enqueue...\n");
+            while (fgets(line, sizeof(line), queryFile) != nullptr && queryCount < 100) {
                 // Remove trailing newline
                 int len = 0;
                 while (line[len] != '\0' && line[len] != '\n') {
@@ -210,22 +213,65 @@ int main(int argc, char* argv[]) {
                     continue;
                 }
                 
-                ++queryNum;
-                printf("[QUERY %d] %s\n", queryNum, line);
-                
                 // Check for SHUTDOWN command
                 if (strEquals(line, "SHUTDOWN")) {
-                    printf("[QUERY] SHUTDOWN command received.\n");
+                    printf("[BATCH] SHUTDOWN command detected, stopping batch.\n");
                     logger->logInfo("SHUTDOWN command received");
                     break;
                 }
                 
-                // Execute query
-                executor.execute(line);
+                // Copy query to buffer
+                int i = 0;
+                for (i = 0; i < len && i < 1023; ++i) {
+                    queries[queryCount][i] = line[i];
+                }
+                queries[queryCount][i] = '\0';
+                ++queryCount;
+            }
+            fclose(queryFile);
+            
+            printf("[BATCH] Read %d queries. Now batch enqueuing...\n", queryCount);
+            
+            // Phase 2: Batch enqueue all queries
+            for (int i = 0; i < queryCount; ++i) {
+                QueryTask* task = new QueryTask();
+                int j = 0;
+                for (j = 0; queries[i][j] != '\0' && j < 511; ++j) {
+                    task->queryString[j] = queries[i][j];
+                }
+                task->queryString[j] = '\0';
+                task->taskId = i + 1;
+                
+                if (startsWith(queries[i], "ADMIN ")) {
+                    task->priority = ADMIN;
+                    printf("[BATCH] Enqueuing ADMIN query %d: %s\n", task->taskId, task->queryString);
+                } else {
+                    task->priority = USER;
+                }
+                
+                executor.enqueueTask(task);
+                printf("[BATCH] Enqueued task %d with priority=%s\n", task->taskId,
+                       (task->priority == ADMIN ? "ADMIN" : "USER"));
             }
             
-            fclose(queryFile);
-            printf("[QUERY] Processed %d queries.\n", queryNum);
+            printf("[BATCH] All %d queries enqueued. Now processing queue...\n", queryCount);
+            
+            // Phase 3: Process all queued tasks
+            int processed = 0;
+            while (processed < queryCount) {
+                QueryTask* next = executor.dequeueTask();
+                if (next == nullptr) {
+                    printf("[ERROR] Priority queue returned nullptr prematurely\n");
+                    break;
+                }
+                
+                printf("[EXECUTE] Processing task %d: %s\n", next->taskId, next->queryString);
+                executor.executeTask(next);
+                delete next;
+                ++processed;
+            }
+            
+            printf("[QUERY] Processed %d queries in batch mode.\n", processed);
             logger->logInfo("Query processing complete");
         }
     }

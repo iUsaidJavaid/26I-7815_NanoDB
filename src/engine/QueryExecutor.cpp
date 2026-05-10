@@ -300,7 +300,26 @@ void QueryExecutor::execute(const char* queryString) {
 
     printf("[LOG] Dequeued task %d for execution\n", next->taskId);
 
-    const char* q = next->queryString;
+    executeTask(next);
+    delete next;
+}
+
+void QueryExecutor::enqueueTask(QueryTask* task) {
+    queue_.enqueue(task);
+    printf("[LOG] Enqueued task %d with priority=%s\n", task->taskId,
+           (task->priority == ADMIN ? "ADMIN" : "USER"));
+}
+
+QueryTask* QueryExecutor::dequeueTask() {
+    QueryTask* next = queue_.dequeue();
+    if (next != nullptr) {
+        printf("[LOG] Dequeued task %d for execution\n", next->taskId);
+    }
+    return next;
+}
+
+void QueryExecutor::executeTask(QueryTask* task) {
+    const char* q = task->queryString;
 
     if (startsWith(q, "SELECT ") || startsWith(q, "select ")) {
         char tableName[64] = {0};
@@ -575,6 +594,7 @@ void QueryExecutor::executeJoin(const char* t1, const char* t2, const char* t3,
     printf("[LOG] executeJoin: t1=%s, t2=%s, t3=%s\n", t1, t2, t3);
 
     Graph graph(10);
+    graph.registerDefaultEdges();
     MSTOptimizer optimizer;
     int mstEdgeCount = 0;
     GraphEdge* mst = optimizer.computeMST(graph, mstEdgeCount);

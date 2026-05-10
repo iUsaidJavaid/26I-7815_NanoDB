@@ -20,6 +20,9 @@ public:
     ~QueryExecutor();
 
     void execute(const char* queryString);
+    void enqueueTask(QueryTask* task);
+    QueryTask* dequeueTask();
+    void executeTask(QueryTask* task);
     void executeSelect(const char* tableName, const char* whereClause,
                        const char* joinTable2, const char* joinTable3);
     void executeInsert(const char* tableName, Field** values, int valueCount);

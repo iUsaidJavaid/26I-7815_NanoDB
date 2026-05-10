@@ -189,7 +189,14 @@ char* MSTOptimizer::buildJoinPath(GraphEdge* mstEdges, int edgeCount, Graph& gra
 }
 
 void MSTOptimizer::logMSTDecision(const char* path) {
-    printf("[LOG] Multi-table join routed via MST: %s\n", path);
+    char msg[512];
+    int pos = 0;
+    const char* prefix = "[LOG] Multi-table join routed via MST: ";
+    while (prefix[pos]) { msg[pos] = prefix[pos]; pos++; }
+    int pi = 0;
+    while (path[pi] && pos < 510) { msg[pos++] = path[pi++]; }
+    msg[pos++] = '\n'; msg[pos] = '\0';
+    Logger::getInstance()->logLog(msg);
 }
 
 float MSTOptimizer::computeTotalCost(GraphEdge* mstEdges, int edgeCount) const {
@@ -205,6 +212,7 @@ Row** JoinExecutor::executeJoin(const char* table1, const char* table2, const ch
     resultCount = 0;
 
     Graph graph(10);
+    graph.registerDefaultEdges();
     MSTOptimizer optimizer;
     int mstEdgeCount = 0;
     GraphEdge* mst = optimizer.computeMST(graph, mstEdgeCount);
