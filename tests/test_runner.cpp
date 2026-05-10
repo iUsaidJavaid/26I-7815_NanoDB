@@ -160,7 +160,7 @@ int main() {
             printf("[RUNNER] SHUTDOWN command detected\n");
             Logger::getInstance()->logInfo("SHUTDOWN command: flushing to disk");
             
-            pager.flushAllPages();
+            pager.flushAll();
             catalog.saveToDisk();
             
             ++shutdownCount;

@@ -125,7 +125,7 @@ void LRUCache::pinPage(int pageId) {
     CacheEntry* entry = findEntry(pageId);
     if (entry != nullptr) {
         entry->pinned = true;
-        page->isPinned = true;
+        entry->page->isPinned = true;
     }
 }
 
@@ -133,7 +133,7 @@ void LRUCache::unpinPage(int pageId) {
     CacheEntry* entry = findEntry(pageId);
     if (entry != nullptr) {
         entry->pinned = false;
-        page->isPinned = false;
+        entry->page->isPinned = false;
     }
 }
 

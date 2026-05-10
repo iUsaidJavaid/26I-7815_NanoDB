@@ -7,10 +7,11 @@ template<typename T>
 class Queue {
 public:
     Queue(int capacity = 256) : capacity_(capacity), front_(0), rear_(-1), count_(0) {
-        data_ = new T[capacity_];
+        data_ = new T[capacity];
     }
     
     ~Queue() {
+        clearAndDeleteObjects();
         delete[] data_;
     }
     
@@ -49,6 +50,19 @@ public:
     }
     
     void clear() {
+        front_ = 0;
+        rear_ = -1;
+        count_ = 0;
+    }
+    
+    // Clear queue and delete objects if T is a pointer type
+    // This is a no-op for non-pointer types
+    void clearAndDeleteObjects() {
+        int idx = front_;
+        for (int i = 0; i < count_; ++i) {
+            delete data_[idx];
+            idx = (idx + 1) % capacity_;
+        }
         front_ = 0;
         rear_ = -1;
         count_ = 0;

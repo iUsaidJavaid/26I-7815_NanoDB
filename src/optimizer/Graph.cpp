@@ -1,5 +1,5 @@
 #include "optimizer/Graph.h"
-#include <iostream>
+#include <cstdio>
 
 namespace NanoDB {
 
@@ -109,33 +109,31 @@ const char* Graph::getNodeName(int id) const {
 }
 
 void Graph::printGraph() const {
-    std::cout << "Adjacency Matrix:" << std::endl;
-    std::cout << "        ";
+    printf("Adjacency Matrix:\n        ");
     for (int j = 0; j < nodeCount_; ++j) {
-        std::cout << names_[j];
-        for (int k = 0; k < 10 - strLen(names_[j]); ++k) {
-            std::cout << " ";
+        printf("%s", names_[j]);
+        if (j < nodeCount_ - 1) {
+            printf(" ");
         }
     }
-    std::cout << std::endl;
-
+    printf("\n");
     for (int i = 0; i < nodeCount_; ++i) {
-        std::cout << names_[i];
-        for (int k = 0; k < 8 - strLen(names_[i]); ++k) {
-            std::cout << " ";
-        }
+        printf("%s", names_[i]);
         for (int j = 0; j < nodeCount_; ++j) {
-            std::cout << "  " << adjMatrix_[i][j];
+            if (j < nodeCount_ - 1) {
+                printf(" ");
+            }
+            printf("  %.2f", adjMatrix_[i][j]);
         }
-        std::cout << std::endl;
+        printf("\n");
     }
-
-    std::cout << "Edges:" << std::endl;
+    printf("Edges:\n");
     for (int i = 0; i < edgeCount_; ++i) {
-        std::cout << "  " << names_[edgeList_[i].src]
-                  << " -- " << names_[edgeList_[i].dst]
-                  << "  weight=" << edgeList_[i].weight
-                  << "  condition=" << edgeList_[i].joinCondition << std::endl;
+        printf("  %s -> %s  weight=%.2f  condition=%s\n", 
+               names_[edgeList_[i].src],
+               names_[edgeList_[i].dst],
+               edgeList_[i].weight,
+               edgeList_[i].joinCondition);
     }
 }
 

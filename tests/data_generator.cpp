@@ -1,4 +1,3 @@
-#include <iostream>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -7,7 +6,7 @@
 void generateCustomerData(const char* filename, int count) {
     FILE* fp = fopen(filename, "w");
     if (fp == nullptr) {
-        std::cout << "[ERROR] Failed to open " << filename << std::endl;
+        printf("[ERROR] Failed to open %s\n", filename);
         return;
     }
 
@@ -28,13 +27,13 @@ void generateCustomerData(const char* filename, int count) {
     }
 
     fclose(fp);
-    std::cout << "[DataGenerator] Generated " << count << " customer records in " << filename << std::endl;
+    printf("[DataGenerator] Generated %d customer records in %s\n", count, filename);
 }
 
 void generateOrdersData(const char* filename, int count, int customerCount) {
     FILE* fp = fopen(filename, "w");
     if (fp == nullptr) {
-        std::cout << "[ERROR] Failed to open " << filename << std::endl;
+        printf("[ERROR] Failed to open %s\n", filename);
         return;
     }
 
@@ -50,13 +49,13 @@ void generateOrdersData(const char* filename, int count, int customerCount) {
     }
 
     fclose(fp);
-    std::cout << "[DataGenerator] Generated " << count << " orders records in " << filename << std::endl;
+    printf("[DataGenerator] Generated %d orders records in %s\n", count, filename);
 }
 
 void generateLineItemData(const char* filename, int count, int ordersCount) {
     FILE* fp = fopen(filename, "w");
     if (fp == nullptr) {
-        std::cout << "[ERROR] Failed to open " << filename << std::endl;
+        printf("[ERROR] Failed to open %s\n", filename);
         return;
     }
 
@@ -70,7 +69,7 @@ void generateLineItemData(const char* filename, int count, int ordersCount) {
     }
 
     fclose(fp);
-    std::cout << "[DataGenerator] Generated " << count << " lineitem records in " << filename << std::endl;
+    printf("[DataGenerator] Generated %d lineitem records in %s\n", count, filename);
 }
 
 void generateTPCHDataset() {
@@ -78,15 +77,14 @@ void generateTPCHDataset() {
     const int ORDERS_COUNT = 30000;
     const int LINEITEM_COUNT = 50000;
 
-    std::cout << "[DataGenerator] Starting TPC-H-like dataset generation..." << std::endl;
-    std::cout << "[DataGenerator] Target: " << (CUSTOMER_COUNT + ORDERS_COUNT + LINEITEM_COUNT)
-              << " total records" << std::endl;
+    printf("[DataGenerator] Starting TPC-H-like dataset generation...\n");
+    printf("[DataGenerator] Target: %d total records\n", CUSTOMER_COUNT + ORDERS_COUNT + LINEITEM_COUNT);
 
     generateCustomerData("data/customer_data.txt", CUSTOMER_COUNT);
     generateOrdersData("data/orders_data.txt", ORDERS_COUNT, CUSTOMER_COUNT);
     generateLineItemData("data/lineitem_data.txt", LINEITEM_COUNT, ORDERS_COUNT);
 
-    std::cout << "[DataGenerator] Dataset generation complete." << std::endl;
+    printf("[DataGenerator] Dataset generation complete.\n");
 }
 
 int main() {
