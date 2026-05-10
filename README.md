@@ -4,7 +4,7 @@ A lightweight database engine implemented in C++17 without STL containers.
 
 ## GitHub Repository
 
-https://github.com/iusaidjavaid/26I-7815_NanoDB
+https://github.com/iUsaidJavaid/26I-7815_NanoDB
 
 ## Project Structure
 

@@ -53,6 +53,8 @@ SELECT FROM customer WHERE c_custkey == 47
 SELECT FROM customer WHERE c_custkey == 48
 SELECT FROM customer WHERE c_custkey == 49
 SELECT FROM customer WHERE c_custkey == 50
+# Test Case E: 50 standard SELECT queries enqueued, followed by ADMIN UPDATE
+# Priority Queue intercepts ADMIN query and executes before all user queries
 ADMIN UPDATE customer SET c_acctbal = 9999.99 WHERE c_custkey == 1
 SELECT FROM orders WHERE ( (o_totalprice * 1.5) > 100000 AND (o_custkey % 2 == 0) ) OR o_orderstatus != "O"
 INSERT INTO customer VALUES (99991, "Test Alpha", 1234.56, "BUILDING", 5)
