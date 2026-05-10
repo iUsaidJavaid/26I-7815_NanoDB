@@ -150,6 +150,84 @@ int HashMap<char*, int>::hash(char* key) const {
     return hash % capacity_;
 }
 
+// Template specialization for char* key comparison using strcmp
+template<typename ValueType>
+void HashMap<char*, ValueType>::insert(char* key, ValueType value) {
+    int index = hash(key);
+    
+    HashNode<char*, ValueType>* current = buckets_[index];
+    while (current != nullptr) {
+        if (strcmp(current->key, key) == 0) {
+            current->value = value;
+            return;
+        }
+        current = current->next;
+    }
+    
+    HashNode<char*, ValueType>* newNode = new HashNode<char*, ValueType>(key, value);
+    newNode->next = buckets_[index];
+    buckets_[index] = newNode;
+    ++size_;
+    
+    if (size_ > capacity_ * 3 / 4) {
+        rehash(capacity_ * 2);
+    }
+}
+
+template<typename ValueType>
+ValueType* HashMap<char*, ValueType>::get(char* key) {
+    int index = hash(key);
+    HashNode<char*, ValueType>* current = buckets_[index];
+    
+    while (current != nullptr) {
+        if (strcmp(current->key, key) == 0) {
+            return &current->value;
+        }
+        current = current->next;
+    }
+    
+    return nullptr;
+}
+
+template<typename ValueType>
+bool HashMap<char*, ValueType>::remove(char* key) {
+    int index = hash(key);
+    HashNode<char*, ValueType>* current = buckets_[index];
+    HashNode<char*, ValueType>* prev = nullptr;
+    
+    while (current != nullptr) {
+        if (strcmp(current->key, key) == 0) {
+            if (prev == nullptr) {
+                buckets_[index] = current->next;
+            } else {
+                prev->next = current->next;
+            }
+            delete current;
+            --size_;
+            return true;
+        }
+        prev = current;
+        current = current->next;
+    }
+    
+    return false;
+}
+
+template<typename ValueType>
+bool HashMap<char*, ValueType>::contains(char* key) const {
+    int index = hash(key);
+    HashNode<char*, ValueType>* current = buckets_[index];
+    
+    while (current != nullptr) {
+        if (strcmp(current->key, key) == 0) {
+            return true;
+        }
+        current = current->next;
+    }
+    
+    return false;
+}
+
 template<typename KeyType, typename ValueType>
 void HashMap<KeyType, ValueType>::rehash(int newCapacity) {
     HashNode<KeyType, ValueType>** newBuckets = new HashNode<KeyType, ValueType>*[newCapacity];

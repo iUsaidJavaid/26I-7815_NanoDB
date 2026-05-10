@@ -107,6 +107,7 @@ int main() {
     char queries[100][512];
     int queryCount = 0;
     int shutdownIndex = -1;
+    int shutdownCount = 0;
     char line[512];
     
     printf("[RUNNER] Phase 1: Reading all queries for batch enqueue...\n");
