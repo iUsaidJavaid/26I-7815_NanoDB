@@ -4,6 +4,7 @@
 #include "common/Types.h"
 #include "parser/Tokenizer.h"
 #include "parser/Stack.h"
+#include "catalog/SystemCatalog.h"
 
 namespace NanoDB {
 

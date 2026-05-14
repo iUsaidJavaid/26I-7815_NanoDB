@@ -11,6 +11,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 # Source files
 set(SOURCES
     src/common/Logger.cpp
+    src/common/Types.cpp
     src/storage/Page.cpp
     src/storage/Pager.cpp
     src/storage/LRUCache.cpp
@@ -24,6 +25,8 @@ set(SOURCES
     src/optimizer/MST.cpp
     src/engine/QueryExecutor.cpp
     src/engine/PriorityQueue.cpp
+    src/loader/TPCHLoader.cpp
+    src/benchmark/Benchmark.cpp
     src/main.cpp
 )
 
@@ -33,6 +36,7 @@ add_executable(nanodb ${SOURCES})
 # Test executable
 set(TEST_SOURCES
     src/common/Logger.cpp
+    src/common/Types.cpp
     src/storage/Page.cpp
     src/storage/Pager.cpp
     src/storage/LRUCache.cpp
@@ -46,6 +50,8 @@ set(TEST_SOURCES
     src/optimizer/MST.cpp
     src/engine/QueryExecutor.cpp
     src/engine/PriorityQueue.cpp
+    src/loader/TPCHLoader.cpp
+    src/benchmark/Benchmark.cpp
     tests/test_runner.cpp
 )
 

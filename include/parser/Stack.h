@@ -1,6 +1,9 @@
 #ifndef NANODB_STACK_H
 #define NANODB_STACK_H
 
+#include <cstdio>
+#include <type_traits>
+
 namespace NanoDB {
 
 struct StackOverflowException {
@@ -100,8 +103,10 @@ public:
     // Clear stack and delete objects if T is a pointer type
     // This is a no-op for non-pointer types
     void clearAndDeleteObjects() {
-        for (int i = 0; i <= top_; ++i) {
-            delete data_[i];
+        if constexpr (std::is_pointer<T>::value) {
+            for (int i = 0; i <= top_; ++i) {
+                delete data_[i];
+            }
         }
         top_ = -1;
     }

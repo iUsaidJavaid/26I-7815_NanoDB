@@ -25,6 +25,7 @@ public:
     virtual Field* clone() const = 0;
     virtual int serialize(char* buffer, int maxLen) const = 0;
     virtual int deserialize(const char* buffer, int maxLen) = 0;
+    virtual DataType getType() const = 0;
     virtual ~Field() = default;
     
     static Field* createFromTypeTag(unsigned char typeTag);
@@ -103,6 +104,7 @@ public:
 
     int getValue() const { return value_; }
     void setValue(int value) { value_ = value; }
+    DataType getType() const override { return DataType::INT; }
 
 private:
     int value_;
@@ -160,6 +162,7 @@ public:
 
     float getValue() const { return value_; }
     void setValue(float value) { value_ = value; }
+    DataType getType() const override { return DataType::FLOAT; }
 
 private:
     float value_;
@@ -255,6 +258,7 @@ public:
         }
         value_[i] = '\0';
     }
+    DataType getType() const override { return DataType::VARCHAR; }
 
 private:
     char value_[MAX_LENGTH];

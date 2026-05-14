@@ -1,6 +1,8 @@
 #ifndef NANODB_QUEUE_H
 #define NANODB_QUEUE_H
 
+#include <type_traits>
+
 namespace NanoDB {
 
 template<typename T>
@@ -40,6 +42,10 @@ public:
         }
         return data_[front_];
     }
+
+    bool isFull() const {
+        return count_ == capacity_;
+    }
     
     bool isEmpty() const {
         return count_ == 0;
@@ -58,10 +64,12 @@ public:
     // Clear queue and delete objects if T is a pointer type
     // This is a no-op for non-pointer types
     void clearAndDeleteObjects() {
-        int idx = front_;
-        for (int i = 0; i < count_; ++i) {
-            delete data_[idx];
-            idx = (idx + 1) % capacity_;
+        if constexpr (std::is_pointer<T>::value) {
+            int idx = front_;
+            for (int i = 0; i < count_; ++i) {
+                delete data_[idx];
+                idx = (idx + 1) % capacity_;
+            }
         }
         front_ = 0;
         rear_ = -1;

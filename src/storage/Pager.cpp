@@ -128,6 +128,16 @@ void Pager::close() {
     }
 }
 
+int Pager::getPageFaultCount() const {
+    if (lruCache_ == nullptr) return 0;
+    return lruCache_->getPageFaultCount();
+}
+
+int Pager::getLRUEvictionCount() const {
+    if (lruCache_ == nullptr) return 0;
+    return lruCache_->getEvictionCount();
+}
+
 void Pager::readSuperblock() {
     if (file_ == nullptr) {
         return;

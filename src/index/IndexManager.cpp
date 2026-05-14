@@ -178,7 +178,7 @@ int SequentialScanner::scan(const char* tableName, int targetKey, Pager& pager) 
         Page* page = pager.getPage(i);
         pagesScanned++;
         if (page != nullptr) {
-            const char* data = page->getData();
+            const char* data = page->data;
             for (int offset = 0; offset < Page::PAGE_SIZE - (int)sizeof(int); offset += (int)sizeof(int)) {
                 int value = 0;
                 const unsigned char* src = reinterpret_cast<const unsigned char*>(data + offset);

@@ -291,10 +291,10 @@ Token Tokenizer::readIdentifierOrKeyword() {
     
     if (token.value[0] == 'A' || token.value[0] == 'a') {
         int i = 0;
-        const char* and = "AND";
+        const char* and_str = "AND";
         bool match = true;
-        while (and[i] != '\0' && token.value[i] != '\0') {
-            char c1 = and[i];
+        while (and_str[i] != '\0' && token.value[i] != '\0') {
+            char c1 = and_str[i];
             char c2 = token.value[i];
             if (c1 >= 'a' && c1 <= 'z') c1 -= 32;
             if (c2 >= 'a' && c2 <= 'z') c2 -= 32;
@@ -304,17 +304,17 @@ Token Tokenizer::readIdentifierOrKeyword() {
             }
             ++i;
         }
-        if (match && and[i] == '\0' && token.value[i] == '\0') {
+        if (match && and_str[i] == '\0' && token.value[i] == '\0') {
             token.type = AND;
         }
     }
     
     if (token.value[0] == 'O' || token.value[0] == 'o') {
         int i = 0;
-        const char* or = "OR";
+        const char* or_str = "OR";
         bool match = true;
-        while (or[i] != '\0' && token.value[i] != '\0') {
-            char c1 = or[i];
+        while (or_str[i] != '\0' && token.value[i] != '\0') {
+            char c1 = or_str[i];
             char c2 = token.value[i];
             if (c1 >= 'a' && c1 <= 'z') c1 -= 32;
             if (c2 >= 'a' && c2 <= 'z') c2 -= 32;
@@ -324,17 +324,17 @@ Token Tokenizer::readIdentifierOrKeyword() {
             }
             ++i;
         }
-        if (match && or[i] == '\0' && token.value[i] == '\0') {
+        if (match && or_str[i] == '\0' && token.value[i] == '\0') {
             token.type = OR;
         }
     }
     
     if (token.value[0] == 'N' || token.value[0] == 'n') {
         int i = 0;
-        const char* not = "NOT";
+        const char* not_str = "NOT";
         bool match = true;
-        while (not[i] != '\0' && token.value[i] != '\0') {
-            char c1 = not[i];
+        while (not_str[i] != '\0' && token.value[i] != '\0') {
+            char c1 = not_str[i];
             char c2 = token.value[i];
             if (c1 >= 'a' && c1 <= 'z') c1 -= 32;
             if (c2 >= 'a' && c2 <= 'z') c2 -= 32;
@@ -344,7 +344,7 @@ Token Tokenizer::readIdentifierOrKeyword() {
             }
             ++i;
         }
-        if (match && not[i] == '\0' && token.value[i] == '\0') {
+        if (match && not_str[i] == '\0' && token.value[i] == '\0') {
             token.type = NOT;
         }
     }

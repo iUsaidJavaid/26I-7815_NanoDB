@@ -79,6 +79,17 @@ bool strEquals(const char* a, const char* b) {
     return a[i] == '\0' && b[i] == '\0';
 }
 
+bool startsWith(const char* str, const char* prefix) {
+    int i = 0;
+    while (prefix[i] != '\0') {
+        if (str[i] == '\0' || str[i] != prefix[i]) {
+            return false;
+        }
+        ++i;
+    }
+    return true;
+}
+
 int main(int argc, char* argv[]) {
     // Install signal handler
     signal(SIGINT, signalHandler);

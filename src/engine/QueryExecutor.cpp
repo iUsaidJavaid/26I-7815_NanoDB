@@ -1,5 +1,6 @@
 #include "engine/QueryExecutor.h"
 #include <cstdio>
+#include <new>
 
 namespace NanoDB {
 
@@ -384,7 +385,7 @@ void QueryExecutor::executeTask(QueryTask* task) {
         printf("[ERROR] Unknown query type: %s\n", q);
     }
 
-    delete next;
+    delete task;
 }
 
 void QueryExecutor::executeSelect(const char* tableName, const char* whereClause,

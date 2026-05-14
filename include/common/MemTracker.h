@@ -67,7 +67,5 @@ namespace NanoDB {
 }
 
 #endif // DEBUG
-
-} // namespace NanoDB
-
 #endif // NANODB_MEM_TRACKER_H
+ 

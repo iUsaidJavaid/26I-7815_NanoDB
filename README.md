@@ -69,8 +69,8 @@ https://github.com/iUsaidJavaid/26I-7815_NanoDB
 ```bash
 mkdir build
 cd build
-cmake ..
-make
+cmake .. -G "MinGW Makefiles"
+cmake --build .
 ```
 
 ## Running

@@ -18,6 +18,8 @@ public:
     void addNode(int id, const char* tableName);
     void addEdge(int src, int dst, float weight, const char* condition);
 
+    void registerDefaultEdges();
+
     int getNodeCount() const;
     int getEdgeCount() const;
     GraphEdge* getEdges() const;
@@ -35,7 +37,6 @@ private:
     char** names_;
 
     void copyString(char* dest, int destSize, const char* src);
-    void registerDefaultEdges();
 };
 
 } // namespace NanoDB

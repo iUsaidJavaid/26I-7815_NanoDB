@@ -141,6 +141,10 @@ int LRUCache::getEvictionCount() const {
     return evictionCount_;
 }
 
+int LRUCache::getPageFaultCount() const {
+    return pageFaultCount_;
+}
+
 void LRUCache::clear() {
     for (int i = 0; i < HASH_TABLE_SIZE; ++i) {
         CacheEntry* current = hashTable_[i];

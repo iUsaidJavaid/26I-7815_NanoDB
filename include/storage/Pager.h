@@ -22,6 +22,8 @@ public:
     int getTotalPages() const;
     int getNumPages() const { return getTotalPages(); }
     void close();
+    int getPageFaultCount() const;
+    int getLRUEvictionCount() const;
     
 private:
     char filePath_[256];

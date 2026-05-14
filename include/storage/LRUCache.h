@@ -32,6 +32,7 @@ public:
     void pinPage(int pageId);
     void unpinPage(int pageId);
     int getEvictionCount() const;
+    int getPageFaultCount() const;
     
     void clear();
     
