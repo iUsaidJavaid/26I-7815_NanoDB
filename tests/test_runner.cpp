@@ -11,6 +11,17 @@
 
 using namespace NanoDB;
 
+bool startsWith(const char* str, const char* prefix) {
+    int i = 0;
+    while (prefix[i] != '\0') {
+        if (str[i] == '\0' || str[i] != prefix[i]) {
+            return false;
+        }
+        ++i;
+    }
+    return true;
+}
+
 int main() {
     printf("[RUNNER] NanoDB Automated Test Runner\n");
     printf("[RUNNER] =============================\n\n");
@@ -30,34 +41,74 @@ int main() {
     printf("[RUNNER] Initializing SystemCatalog with TPC-H schema...\n");
     SystemCatalog& catalog = *SystemCatalog::getInstance();
     
-    // Create customer table schema
-    catalog.createTable("customer");
-    catalog.addColumn("customer", "c_custkey", DataType::INT);
-    catalog.addColumn("customer", "c_name", DataType::VARCHAR);
-    catalog.addColumn("customer", "c_acctbal", DataType::FLOAT);
-    catalog.addColumn("customer", "c_mktsegment", DataType::VARCHAR);
-    catalog.addColumn("customer", "c_nationkey", DataType::INT);
-    
-    // Create orders table schema
-    catalog.createTable("orders");
-    catalog.addColumn("orders", "o_orderkey", DataType::INT);
-    catalog.addColumn("orders", "o_custkey", DataType::INT);
-    catalog.addColumn("orders", "o_orderstatus", DataType::VARCHAR);
-    catalog.addColumn("orders", "o_totalprice", DataType::FLOAT);
-    
-    // Create lineitem table schema
-    catalog.createTable("lineitem");
-    catalog.addColumn("lineitem", "l_orderkey", DataType::INT);
-    catalog.addColumn("lineitem", "l_partkey", DataType::INT);
-    catalog.addColumn("lineitem", "l_quantity", DataType::FLOAT);
-    catalog.addColumn("lineitem", "l_extendedprice", DataType::FLOAT);
+    // Create customer table schema and register it
+    TableSchema* customerSchema = new TableSchema();
+    int idx = 0;
+    // set table name
+    {
+        int i = 0; const char* n = "customer"; while (n[i]) { customerSchema->tableName[i] = n[i]; ++i; } customerSchema->tableName[8] = '\0';
+    }
+    idx = 0; {
+        int i = 0; const char* cn = "c_custkey"; while (cn[i]) { customerSchema->columns[idx].name[i] = cn[i]; ++i; } customerSchema->columns[idx].type = DataType::INT; customerSchema->columns[idx].maxLen = 0; ++idx; }
+    {
+        int i = 0; const char* cn = "c_name"; while (cn[i]) { customerSchema->columns[idx].name[i] = cn[i]; ++i; } customerSchema->columns[idx].type = DataType::VARCHAR; customerSchema->columns[idx].maxLen = 64; ++idx;
+    }
+    {
+        int i = 0; const char* cn = "c_acctbal"; while (cn[i]) { customerSchema->columns[idx].name[i] = cn[i]; ++i; } customerSchema->columns[idx].type = DataType::FLOAT; customerSchema->columns[idx].maxLen = 0; ++idx;
+    }
+    {
+        int i = 0; const char* cn = "c_mktsegment"; while (cn[i]) { customerSchema->columns[idx].name[i] = cn[i]; ++i; } customerSchema->columns[idx].type = DataType::VARCHAR; customerSchema->columns[idx].maxLen = 32; ++idx;
+    }
+    {
+        int i = 0; const char* cn = "c_nationkey"; while (cn[i]) { customerSchema->columns[idx].name[i] = cn[i]; ++i; } customerSchema->columns[idx].type = DataType::INT; customerSchema->columns[idx].maxLen = 0; ++idx;
+    }
+    customerSchema->columnCount = idx;
+    catalog.registerTable(customerSchema);
+
+    // Create orders table schema and register it
+    TableSchema* ordersSchema = new TableSchema();
+    {
+        int i = 0; const char* n = "orders"; while (n[i]) { ordersSchema->tableName[i] = n[i]; ++i; } ordersSchema->tableName[6] = '\0';
+    }
+    idx = 0; {
+        int i = 0; const char* cn = "o_orderkey"; while (cn[i]) { ordersSchema->columns[idx].name[i] = cn[i]; ++i; } ordersSchema->columns[idx].type = DataType::INT; ++idx; }
+    {
+        int i = 0; const char* cn = "o_custkey"; while (cn[i]) { ordersSchema->columns[idx].name[i] = cn[i]; ++i; } ordersSchema->columns[idx].type = DataType::INT; ++idx;
+    }
+    {
+        int i = 0; const char* cn = "o_orderstatus"; while (cn[i]) { ordersSchema->columns[idx].name[i] = cn[i]; ++i; } ordersSchema->columns[idx].type = DataType::VARCHAR; ordersSchema->columns[idx].maxLen = 32; ++idx;
+    }
+    {
+        int i = 0; const char* cn = "o_totalprice"; while (cn[i]) { ordersSchema->columns[idx].name[i] = cn[i]; ++i; } ordersSchema->columns[idx].type = DataType::FLOAT; ++idx;
+    }
+    ordersSchema->columnCount = idx;
+    catalog.registerTable(ordersSchema);
+
+    // Create lineitem table schema and register it
+    TableSchema* lineSchema = new TableSchema();
+    {
+        int i = 0; const char* n = "lineitem"; while (n[i]) { lineSchema->tableName[i] = n[i]; ++i; } lineSchema->tableName[8] = '\0';
+    }
+    idx = 0; {
+        int i = 0; const char* cn = "l_orderkey"; while (cn[i]) { lineSchema->columns[idx].name[i] = cn[i]; ++i; } lineSchema->columns[idx].type = DataType::INT; ++idx; }
+    {
+        int i = 0; const char* cn = "l_partkey"; while (cn[i]) { lineSchema->columns[idx].name[i] = cn[i]; ++i; } lineSchema->columns[idx].type = DataType::INT; ++idx;
+    }
+    {
+        int i = 0; const char* cn = "l_quantity"; while (cn[i]) { lineSchema->columns[idx].name[i] = cn[i]; ++i; } lineSchema->columns[idx].type = DataType::FLOAT; ++idx;
+    }
+    {
+        int i = 0; const char* cn = "l_extendedprice"; while (cn[i]) { lineSchema->columns[idx].name[i] = cn[i]; ++i; } lineSchema->columns[idx].type = DataType::FLOAT; ++idx;
+    }
+    lineSchema->columnCount = idx;
+    catalog.registerTable(lineSchema);
     
     Logger::getInstance()->logInfo("SystemCatalog initialized with TPC-H schema");
 
     // Step 4: Load TPC-H data via TPCHLoader (check if already loaded)
     printf("[RUNNER] Loading TPC-H data...\n");
     TPCHLoader loader;
-    
+
     // Check if data already exists by checking if tables have rows
     bool dataLoaded = false;
     TableSchema* customerTable = catalog.getTable("customer");
@@ -66,9 +117,15 @@ int main() {
         printf("[RUNNER] Data already loaded (customer has %d rows)\n", customerTable->totalRows);
         Logger::getInstance()->logInfo("TPC-H data already loaded, skipping import");
     } else {
-        loader.loadCustomers("data/customers.tbl", QueryExecutor(pager, catalog, IndexManager::getInstance(), MSTOptimizer(), PriorityQueue(100)));
-        loader.loadOrders("data/orders.tbl", QueryExecutor(pager, catalog, IndexManager::getInstance(), MSTOptimizer(), PriorityQueue(100)));
-        loader.loadLineItems("data/lineitem.tbl", QueryExecutor(pager, catalog, IndexManager::getInstance(), MSTOptimizer(), PriorityQueue(100)));
+        // Create reusable components for loading
+        IndexManager& idxMgr = IndexManager::getInstance();
+        MSTOptimizer loadOptimizer;
+        PriorityQueue loadQueue(100);
+        QueryExecutor loaderExecutor(pager, catalog, idxMgr, loadOptimizer, loadQueue);
+
+        loader.loadCustomers("data/customers.tbl", loaderExecutor);
+        loader.loadOrders("data/orders.tbl", loaderExecutor);
+        loader.loadLineItems("data/lineitem.tbl", loaderExecutor);
         Logger::getInstance()->logInfo("TPC-H data loaded successfully");
     }
 
@@ -245,7 +302,7 @@ int main() {
     // Get statistics from components
     int pageFaults = pager.getPageFaultCount();
     int lruEvictions = pager.getLRUEvictionCount();
-    int cacheHits = pager.getCacheHitCount();
+    int cacheHits = 0; // cache hit metric not implemented; default to 0
     
     printf("[RUNNER] Total page faults: %d\n", pageFaults);
     printf("[RUNNER] Total LRU evictions: %d\n", lruEvictions);
