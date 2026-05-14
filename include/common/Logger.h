@@ -1,13 +1,15 @@
 #ifndef NANODB_LOGGER_H
 #define NANODB_LOGGER_H
 
+#include <cstdio>
+
 namespace NanoDB {
 
 enum class LogLevel {
     INFO,
     LOG,
     WARN,
-    ERROR
+    ERR
 };
 
 class Logger {

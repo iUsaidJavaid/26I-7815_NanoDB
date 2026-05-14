@@ -13,17 +13,10 @@ SystemCatalog::SystemCatalog() {
 SystemCatalog::~SystemCatalog() {
     if (tableMap_ != nullptr) {
         // Manually delete char* keys and TableSchema* values before deleting HashMap
-        for (int i = 0; i < 256; ++i) {
-            HashNode<char*, TableSchema*>* node = tableMap_->buckets_[i];
-            while (node != nullptr) {
-                HashNode<char*, TableSchema*>* next = node->next;
-                delete[] node->key;      // Delete the char* key
-                delete node->value;      // Delete TableSchema*
-                delete node;
-                node = next;
-            }
-        }
-        delete[] tableMap_->buckets_;   // Delete bucket array
+        tableMap_->forEach([](char* key, TableSchema* value) {
+            delete[] key;      // Delete the char* key
+            delete value;      // Delete TableSchema*
+        });
         delete tableMap_;
     }
 }
@@ -59,7 +52,11 @@ void SystemCatalog::registerTable(TableSchema* schema) {
 }
 
 TableSchema* SystemCatalog::getTable(const char* name) {
-    return tableMap_->get((char*)name);
+    TableSchema** result = tableMap_->get((char*)name);
+    if (result == nullptr) {
+        return nullptr;
+    }
+    return *result;
 }
 
 bool SystemCatalog::tableExists(const char* name) const {
@@ -107,54 +104,42 @@ void SystemCatalog::saveToDisk(const char* catalogFile) {
     int tableCount = tableMap_->size();
     fwrite(&tableCount, sizeof(int), 1, f);
     
-    for (int i = 0; i < 256; ++i) {
-        HashNode<char*, TableSchema*>* node = tableMap_->buckets_[i];
-        while (node != nullptr) {
-            TableSchema* schema = node->value;
-            
-            fwrite(schema->tableName, sizeof(char), 64, f);
-            fwrite(schema->filePath, sizeof(char), 256, f);
-            fwrite(&schema->columnCount, sizeof(int), 1, f);
-            fwrite(&schema->rootPageId, sizeof(int), 1, f);
-            fwrite(&schema->totalRows, sizeof(int), 1, f);
-            
-            for (int j = 0; j < schema->columnCount; ++j) {
-                fwrite(schema->columns[j].name, sizeof(char), 64, f);
-                int typeInt = (int)schema->columns[j].type;
-                fwrite(&typeInt, sizeof(int), 1, f);
-                fwrite(&schema->columns[j].maxLen, sizeof(int), 1, f);
-            }
-            
-            node = node->next;
+    tableMap_->forEach([f](char* key, TableSchema* schema) {
+        fwrite(schema->tableName, sizeof(char), 64, f);
+        fwrite(schema->filePath, sizeof(char), 256, f);
+        fwrite(&schema->columnCount, sizeof(int), 1, f);
+        fwrite(&schema->rootPageId, sizeof(int), 1, f);
+        fwrite(&schema->totalRows, sizeof(int), 1, f);
+        
+        for (int j = 0; j < schema->columnCount; ++j) {
+            fwrite(schema->columns[j].name, sizeof(char), 64, f);
+            int typeInt = (int)schema->columns[j].type;
+            fwrite(&typeInt, sizeof(int), 1, f);
+            fwrite(&schema->columns[j].maxLen, sizeof(int), 1, f);
         }
-    }
+    });
     
     fclose(f);
 }
 
 void SystemCatalog::printAll() const {
-    for (int i = 0; i < 256; ++i) {
-        HashNode<char*, TableSchema*>* node = tableMap_->buckets_[i];
-        while (node != nullptr) {
-            TableSchema* schema = node->value;
-            printf("Table: %s\n", schema->tableName);
-            printf("  File: %s\n", schema->filePath);
-            printf("  Columns: %d\n", schema->columnCount);
-            printf("  Root Page: %d\n", schema->rootPageId);
-            printf("  Total Rows: %d\n", schema->totalRows);
-            for (int j = 0; j < schema->columnCount; ++j) {
-                printf("    %s: ", schema->columns[j].name);
-                if (schema->columns[j].type == DataType::INT) {
-                    printf("INT\n");
-                } else if (schema->columns[j].type == DataType::FLOAT) {
-                    printf("FLOAT\n");
-                } else {
-                    printf("VARCHAR(%d)\n", schema->columns[j].maxLen);
-                }
+    tableMap_->forEach([](char* key, TableSchema* schema) {
+        printf("Table: %s\n", schema->tableName);
+        printf("  File: %s\n", schema->filePath);
+        printf("  Columns: %d\n", schema->columnCount);
+        printf("  Root Page: %d\n", schema->rootPageId);
+        printf("  Total Rows: %d\n", schema->totalRows);
+        for (int j = 0; j < schema->columnCount; ++j) {
+            printf("    %s: ", schema->columns[j].name);
+            if (schema->columns[j].type == DataType::INT) {
+                printf("INT\n");
+            } else if (schema->columns[j].type == DataType::FLOAT) {
+                printf("FLOAT\n");
+            } else {
+                printf("VARCHAR(%d)\n", schema->columns[j].maxLen);
             }
-            node = node->next;
         }
-    }
+    });
 }
 
 void SystemCatalog::initializeTPCHTables() {

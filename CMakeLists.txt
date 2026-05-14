@@ -10,13 +10,11 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Source files
 set(SOURCES
-    src/common/Types.cpp
     src/common/Logger.cpp
     src/storage/Page.cpp
     src/storage/Pager.cpp
     src/storage/LRUCache.cpp
     src/catalog/SystemCatalog.cpp
-    src/catalog/HashMap.cpp
     src/parser/Tokenizer.cpp
     src/parser/ShuntingYard.cpp
     src/parser/ExpressionEvaluator.cpp
@@ -34,13 +32,11 @@ add_executable(nanodb ${SOURCES})
 
 # Test executable
 set(TEST_SOURCES
-    src/common/Types.cpp
     src/common/Logger.cpp
     src/storage/Page.cpp
     src/storage/Pager.cpp
     src/storage/LRUCache.cpp
     src/catalog/SystemCatalog.cpp
-    src/catalog/HashMap.cpp
     src/parser/Tokenizer.cpp
     src/parser/ShuntingYard.cpp
     src/parser/ExpressionEvaluator.cpp

@@ -126,7 +126,7 @@ void Logger::logWarn(const char* message) {
 }
 
 void Logger::logError(const char* message) {
-    log(LogLevel::ERROR, message);
+    log(LogLevel::ERR, message);
 }
 
 void Logger::clearLogFile() {
@@ -164,7 +164,7 @@ const char* Logger::levelToString(LogLevel level) {
             return "LOG";
         case LogLevel::WARN:
             return "WARN";
-        case LogLevel::ERROR:
+        case LogLevel::ERR:
             return "ERROR";
         default:
             return "UNKNOWN";

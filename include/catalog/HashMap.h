@@ -1,6 +1,9 @@
 #ifndef NANODB_HASH_MAP_H
 #define NANODB_HASH_MAP_H
 
+#include <cstring>
+#include <type_traits>
+
 namespace NanoDB {
 
 template<typename KeyType, typename ValueType>
@@ -112,148 +115,84 @@ public:
         return size_;
     }
     
+    template<typename Func>
+    void forEach(Func func) const {
+        for (int i = 0; i < capacity_; ++i) {
+            HashNode<KeyType, ValueType>* current = buckets_[i];
+            while (current != nullptr) {
+                func(current->key, current->value);
+                current = current->next;
+            }
+        }
+    }
+    
 private:
     HashNode<KeyType, ValueType>** buckets_;
     int capacity_;
     int size_;
     
-    int hash(KeyType key) const;
-    void rehash(int newCapacity);
-};
-
-template<>
-int HashMap<int, int>::hash(int key) const {
-    return (key * 2654435761u) % capacity_;
-}
-
-template<>
-int HashMap<const char*, int>::hash(const char* key) const {
-    unsigned long hash = 5381;
-    int c;
-    int i = 0;
-    while ((c = key[i]) != '\0') {
-        hash = ((hash << 5) + hash) + c;
-        ++i;
+    int hash(KeyType key) const {
+        return computeHash(key, std::is_same<KeyType, int>(), 
+                          std::is_same<KeyType, char*>(), 
+                          std::is_same<KeyType, const char*>());
     }
-    return hash % capacity_;
-}
-
-template<>
-int HashMap<char*, int>::hash(char* key) const {
-    unsigned long hash = 5381;
-    int c;
-    int i = 0;
-    while ((c = key[i]) != '\0') {
-        hash = ((hash << 5) + hash) + c;
-        ++i;
-    }
-    return hash % capacity_;
-}
-
-// Template specialization for char* key comparison using strcmp
-template<typename ValueType>
-void HashMap<char*, ValueType>::insert(char* key, ValueType value) {
-    int index = hash(key);
     
-    HashNode<char*, ValueType>* current = buckets_[index];
-    while (current != nullptr) {
-        if (strcmp(current->key, key) == 0) {
-            current->value = value;
-            return;
+    int computeHash(int key, std::true_type, std::false_type, std::false_type) const {
+        return (key * 2654435761u) % capacity_;
+    }
+    
+    int computeHash(char* key, std::false_type, std::true_type, std::false_type) const {
+        unsigned long hash = 5381;
+        int c;
+        int i = 0;
+        while ((c = key[i]) != '\0') {
+            hash = ((hash << 5) + hash) + c;
+            ++i;
         }
-        current = current->next;
+        return hash % capacity_;
     }
     
-    HashNode<char*, ValueType>* newNode = new HashNode<char*, ValueType>(key, value);
-    newNode->next = buckets_[index];
-    buckets_[index] = newNode;
-    ++size_;
-    
-    if (size_ > capacity_ * 3 / 4) {
-        rehash(capacity_ * 2);
-    }
-}
-
-template<typename ValueType>
-ValueType* HashMap<char*, ValueType>::get(char* key) {
-    int index = hash(key);
-    HashNode<char*, ValueType>* current = buckets_[index];
-    
-    while (current != nullptr) {
-        if (strcmp(current->key, key) == 0) {
-            return &current->value;
+    int computeHash(const char* key, std::false_type, std::false_type, std::true_type) const {
+        unsigned long hash = 5381;
+        int c;
+        int i = 0;
+        while ((c = key[i]) != '\0') {
+            hash = ((hash << 5) + hash) + c;
+            ++i;
         }
-        current = current->next;
+        return hash % capacity_;
     }
     
-    return nullptr;
-}
-
-template<typename ValueType>
-bool HashMap<char*, ValueType>::remove(char* key) {
-    int index = hash(key);
-    HashNode<char*, ValueType>* current = buckets_[index];
-    HashNode<char*, ValueType>* prev = nullptr;
+    int computeHash(KeyType key, std::false_type, std::false_type, std::false_type) const {
+        return static_cast<int>(reinterpret_cast<long>(key)) % capacity_;
+    }
     
-    while (current != nullptr) {
-        if (strcmp(current->key, key) == 0) {
-            if (prev == nullptr) {
-                buckets_[index] = current->next;
-            } else {
-                prev->next = current->next;
+    void rehash(int newCapacity) {
+        HashNode<KeyType, ValueType>** newBuckets = new HashNode<KeyType, ValueType>*[newCapacity];
+        for (int i = 0; i < newCapacity; ++i) {
+            newBuckets[i] = nullptr;
+        }
+        
+        int oldCapacity = capacity_;
+        HashNode<KeyType, ValueType>** oldBuckets = buckets_;
+        
+        capacity_ = newCapacity;
+        buckets_ = newBuckets;
+        size_ = 0;
+        
+        for (int i = 0; i < oldCapacity; ++i) {
+            HashNode<KeyType, ValueType>* current = oldBuckets[i];
+            while (current != nullptr) {
+                HashNode<KeyType, ValueType>* next = current->next;
+                insert(current->key, current->value);
+                delete current;
+                current = next;
             }
-            delete current;
-            --size_;
-            return true;
         }
-        prev = current;
-        current = current->next;
+        
+        delete[] oldBuckets;
     }
-    
-    return false;
-}
-
-template<typename ValueType>
-bool HashMap<char*, ValueType>::contains(char* key) const {
-    int index = hash(key);
-    HashNode<char*, ValueType>* current = buckets_[index];
-    
-    while (current != nullptr) {
-        if (strcmp(current->key, key) == 0) {
-            return true;
-        }
-        current = current->next;
-    }
-    
-    return false;
-}
-
-template<typename KeyType, typename ValueType>
-void HashMap<KeyType, ValueType>::rehash(int newCapacity) {
-    HashNode<KeyType, ValueType>** newBuckets = new HashNode<KeyType, ValueType>*[newCapacity];
-    for (int i = 0; i < newCapacity; ++i) {
-        newBuckets[i] = nullptr;
-    }
-    
-    int oldCapacity = capacity_;
-    HashNode<KeyType, ValueType>** oldBuckets = buckets_;
-    
-    capacity_ = newCapacity;
-    buckets_ = newBuckets;
-    size_ = 0;
-    
-    for (int i = 0; i < oldCapacity; ++i) {
-        HashNode<KeyType, ValueType>* current = oldBuckets[i];
-        while (current != nullptr) {
-            HashNode<KeyType, ValueType>* next = current->next;
-            insert(current->key, current->value);
-            delete current;
-            current = next;
-        }
-    }
-    
-    delete[] oldBuckets;
-}
+};
 
 #ifdef RUN_HASHMAP_TEST
 void testHashMap() {
